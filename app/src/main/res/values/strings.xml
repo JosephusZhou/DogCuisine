@@ -1,3 +1,14 @@
 <resources>
-    <string name="app_name">DogCuisine</string>
+    <string name="app_name">线条小狗菜谱</string>
+    <string name="recipes_title">菜谱</string>
+    <string name="add_recipe_title">添加菜谱</string>
+    <string name="add_recipe_placeholder">这里将是添加菜谱的页面，后续可完善表单。</string>
+    <string name="recipe_thumbnail_cd">菜谱缩略图</string>
+    <string name="add_cover">添加封面</string>
+    <string name="recipe_name_hint">请输入菜谱名称</string>
+    <string name="add_step">添加步骤</string>
+    <string name="add_images">添加图片</string>
+    <string name="delete_step">删除步骤</string>
+    <string name="save">保存</string>
+    <string name="step_title">步骤 %1$d</string>
 </resources>
