@@ -13,7 +13,6 @@
         android:scaleType="centerCrop"
         android:contentDescription="@string/recipe_thumbnail_cd"
         android:background="@android:color/darker_gray"
-        android:padding="4dp"
         android:src="@drawable/ic_launcher_foreground" />
 
     <LinearLayout

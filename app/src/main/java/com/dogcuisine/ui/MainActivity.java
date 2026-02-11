@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int MENU_ID_CATEGORY = 1000;
     private static final int MENU_ID_ADD = 1001;
+    private static final int MENU_ID_SEARCH = 1002;
     private static final long SPLASH_DURATION_MS = 3000L;
 
     private RecyclerView rvRecipes;
@@ -81,14 +82,22 @@ public class MainActivity extends AppCompatActivity {
         // 动态添加菜单项，避免缺失 menu_main 资源导致崩溃
         Menu menu = toolbar.getMenu();
         menu.clear();
+        MenuItem searchItem = menu.add(Menu.NONE, MENU_ID_SEARCH, Menu.NONE, "搜索");
+        searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        searchItem.setIcon(R.drawable.ic_search_gold);
         MenuItem categoryItem = menu.add(Menu.NONE, MENU_ID_CATEGORY, Menu.NONE, "分类");
         categoryItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        categoryItem.setIcon(android.R.drawable.ic_menu_sort_by_size);
+        categoryItem.setIcon(R.drawable.ic_category_gold);
         MenuItem addItem = menu.add(Menu.NONE, MENU_ID_ADD, Menu.NONE, "添加");
         addItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         addItem.setIcon(R.drawable.ic_add_gold);
         toolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == MENU_ID_CATEGORY) {
+            if (item.getItemId() == MENU_ID_SEARCH) {
+                Intent intent = new Intent(MainActivity.this, SearchRecipeActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (item.getItemId() == MENU_ID_CATEGORY) {
                 Intent intent = new Intent(MainActivity.this, CategoryManageActivity.class);
                 categoryManageLauncher.launch(intent);
                 return true;

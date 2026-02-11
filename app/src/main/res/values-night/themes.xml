@@ -17,10 +17,10 @@
     </style>
 
     <style name="Theme.DogCuisine.Splash" parent="Theme.SplashScreen.IconBackground">
-        <item name="windowSplashScreenBackground">@android:color/black</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenBackground">@color/purple_500</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_ic_launcher_inset</item>
         <item name="windowSplashScreenAnimationDuration">1000</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/launcher_green</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/purple_500</item>
         <item name="postSplashScreenTheme">@style/Theme.DogCuisine</item>
     </style>
 </resources>
