@@ -2,6 +2,8 @@ package com.dogcuisine.ui;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -38,6 +40,7 @@ import com.dogcuisine.data.StepItem;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.gson.Gson;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -49,6 +52,10 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
 
     public static final String EXTRA_RECIPE_ID = "recipe_id";
     private static final int MENU_ID_SAVE = 2001;
+    private static final int MAX_IMAGE_LONG_EDGE = 1600;
+    private static final int TARGET_IMAGE_BYTES = 600 * 1024;
+    private static final int JPEG_QUALITY_START = 85;
+    private static final int JPEG_QUALITY_MIN = 65;
 
     private ImageView ivCover;
     private TextView tvCoverHint;
@@ -348,27 +355,125 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
 
     @Nullable
     private String copyAndCompressImage(@NonNull Uri uri, @NonNull String prefix) {
-        try (InputStream in = getContentResolver().openInputStream(uri)) {
-            if (in == null) return null;
-            BitmapFactory.Options opts = new BitmapFactory.Options();
-            opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            Bitmap bitmap = BitmapFactory.decodeStream(in, null, opts);
+        try {
+            Bitmap bitmap = decodeBitmapWithSample(uri, MAX_IMAGE_LONG_EDGE);
             if (bitmap == null) return null;
+
+            Bitmap scaledBitmap = scaleBitmapIfNeeded(bitmap, MAX_IMAGE_LONG_EDGE);
+            Bitmap rotatedBitmap = rotateByExifIfNeeded(scaledBitmap, uri);
+            byte[] compressed = compressToJpegBytes(rotatedBitmap);
 
             File dir = new File(getFilesDir(), "images");
             if (!dir.exists()) dir.mkdirs();
             String fileName = prefix + "_" + System.currentTimeMillis() + ".jpg";
             File outFile = new File(dir, fileName);
             try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, fos);
+                fos.write(compressed);
                 fos.flush();
             }
-            bitmap.recycle();
+            if (!rotatedBitmap.isRecycled()) rotatedBitmap.recycle();
+            if (scaledBitmap != rotatedBitmap && !scaledBitmap.isRecycled()) scaledBitmap.recycle();
+            if (bitmap != scaledBitmap && bitmap != rotatedBitmap && !bitmap.isRecycled()) bitmap.recycle();
             return outFile.getAbsolutePath();
         } catch (Exception e) {
             e.printStackTrace();
             runOnUiThread(() -> Toast.makeText(this, "图片处理失败", Toast.LENGTH_SHORT).show());
             return null;
         }
+    }
+
+    @Nullable
+    private Bitmap decodeBitmapWithSample(@NonNull Uri uri, int maxLongEdge) throws Exception {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) return null;
+            BitmapFactory.decodeStream(in, null, bounds);
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            return null;
+        }
+
+        BitmapFactory.Options decode = new BitmapFactory.Options();
+        decode.inPreferredConfig = Bitmap.Config.RGB_565;
+        decode.inSampleSize = computeInSampleSize(bounds.outWidth, bounds.outHeight, maxLongEdge);
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) return null;
+            return BitmapFactory.decodeStream(in, null, decode);
+        }
+    }
+
+    private int computeInSampleSize(int width, int height, int maxLongEdge) {
+        int inSampleSize = 1;
+        int longEdge = Math.max(width, height);
+        while (longEdge / inSampleSize > maxLongEdge * 2) {
+            inSampleSize *= 2;
+        }
+        return Math.max(1, inSampleSize);
+    }
+
+    @NonNull
+    private Bitmap scaleBitmapIfNeeded(@NonNull Bitmap source, int maxLongEdge) {
+        int width = source.getWidth();
+        int height = source.getHeight();
+        int longEdge = Math.max(width, height);
+        if (longEdge <= maxLongEdge) {
+            return source;
+        }
+        float ratio = maxLongEdge / (float) longEdge;
+        int targetW = Math.max(1, Math.round(width * ratio));
+        int targetH = Math.max(1, Math.round(height * ratio));
+        Bitmap scaled = Bitmap.createScaledBitmap(source, targetW, targetH, true);
+        if (scaled != source) {
+            source.recycle();
+        }
+        return scaled;
+    }
+
+    @NonNull
+    private Bitmap rotateByExifIfNeeded(@NonNull Bitmap source, @NonNull Uri uri) {
+        int orientation = ExifInterface.ORIENTATION_UNDEFINED;
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in != null) {
+                ExifInterface exif = new ExifInterface(in);
+                orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            }
+        } catch (Exception ignored) {
+        }
+
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.postRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.postRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.postRotate(270);
+                break;
+            default:
+                return source;
+        }
+        Bitmap rotated = Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+        if (rotated != source) {
+            source.recycle();
+        }
+        return rotated;
+    }
+
+    @NonNull
+    private byte[] compressToJpegBytes(@NonNull Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int quality = JPEG_QUALITY_START;
+        while (true) {
+            baos.reset();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            if (baos.size() <= TARGET_IMAGE_BYTES || quality <= JPEG_QUALITY_MIN) {
+                break;
+            }
+            quality -= 5;
+        }
+        return baos.toByteArray();
     }
 }
