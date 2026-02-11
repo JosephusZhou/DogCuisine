@@ -5,8 +5,9 @@
     <color name="purple_500">#FEF1A5</color> <!-- 主色：柔和米黄 -->
     <color name="purple_700">#E6D67B</color> <!-- 主色深阶，用于强调/夜间 -->
 
-    <color name="teal_200">#F4B86A</color> <!-- 辅色：暖琥珀，按钮/图标 -->
-    <color name="teal_700">#D6923D</color> <!-- 辅色深阶 -->
+    <color name="teal_200">#4A3F2B</color> <!-- 辅色：深棕灰，按钮/图标 -->
+    <color name="teal_700">#4A3F2B</color> <!-- 辅色深阶：与主辅色一致保持稳重 -->
+    <color name="launcher_green">#3DDC84</color> <!-- 与 ic_launcher 背景一致 -->
 
     <color name="black">#FF0F172A</color>
     <color name="white">#FFFFFFFF</color>

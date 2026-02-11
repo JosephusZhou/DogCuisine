@@ -15,4 +15,12 @@
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- Customize your theme here. -->
     </style>
+
+    <style name="Theme.DogCuisine.Splash" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/launcher_green</item>
+        <item name="postSplashScreenTheme">@style/Theme.DogCuisine</item>
+    </style>
 </resources>

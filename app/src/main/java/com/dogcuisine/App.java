@@ -3,8 +3,11 @@ package com.dogcuisine;
 import android.app.Application;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.dogcuisine.data.AppDatabase;
+import com.dogcuisine.data.CategoryDao;
+import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
 import com.google.gson.Gson;
@@ -34,13 +37,16 @@ public class App extends Application {
         // 确保数据库文件创建，并在首次运行时填充示例数据（仅当表为空）
         ioExecutor.execute(() -> {
             database.getOpenHelper().getWritableDatabase();
+            CategoryDao categoryDao = database.categoryDao();
+            Long defaultCategoryId = ensureDefaultCategories(categoryDao);
+
             long count = database.recipeDao().count();
             if (count == 0) {
                 long now = System.currentTimeMillis();
                 List<RecipeEntity> seeds = Arrays.asList(
-                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]"),
-                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]"),
-                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]")
+                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]", defaultCategoryId),
+                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]", defaultCategoryId),
+                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]", defaultCategoryId)
                 );
                 database.recipeDao().insertAll(seeds);
             }
@@ -48,6 +54,32 @@ public class App extends Application {
             // 执行图片清理操作
             cleanupUnusedImages();
         });
+    }
+
+    @Nullable
+    private Long ensureDefaultCategories(@NonNull CategoryDao categoryDao) {
+        try {
+            long categoryCount = categoryDao.count();
+            if (categoryCount == 0) {
+                List<CategoryEntity> defaults = Arrays.asList(
+                        new CategoryEntity(null, "未分类", 0),
+                        new CategoryEntity(null, "主食", 1),
+                        new CategoryEntity(null, "小食", 2)
+                );
+                List<Long> ids = categoryDao.insertAll(defaults);
+                if (ids != null && !ids.isEmpty()) {
+                    return ids.get(0);
+                }
+            } else {
+                List<CategoryEntity> categories = categoryDao.getAll();
+                if (categories != null && !categories.isEmpty()) {
+                    return categories.get(0).getId();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
     
     /**

@@ -14,7 +14,7 @@
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
         app:titleTextColor="@android:color/white" />
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -42,6 +42,15 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tvDetailCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#4A3F2B"
+                android:textSize="14sp"
+                android:textStyle="normal" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvDetailSteps"
                 android:layout_width="match_parent"
@@ -50,6 +59,6 @@
                 android:layout_marginTop="12dp" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>

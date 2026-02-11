@@ -34,7 +34,12 @@ public class RecipeEntity {
     @ColumnInfo(name = "steps_json", typeAffinity = ColumnInfo.TEXT)
     private String stepsJson;
 
-    public RecipeEntity(@Nullable Long id, String name, long createdAt, long updatedAt, String content, @Nullable String coverImagePath, String stepsJson) {
+    // 菜谱分类 ID
+    @ColumnInfo(name = "category_id")
+    @Nullable
+    private Long categoryId;
+
+    public RecipeEntity(@Nullable Long id, String name, long createdAt, long updatedAt, String content, @Nullable String coverImagePath, String stepsJson, @Nullable Long categoryId) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
@@ -42,6 +47,7 @@ public class RecipeEntity {
         this.content = content;
         this.coverImagePath = coverImagePath;
         this.stepsJson = stepsJson;
+        this.categoryId = categoryId;
     }
 
     @Nullable
@@ -100,5 +106,14 @@ public class RecipeEntity {
 
     public void setStepsJson(String stepsJson) {
         this.stepsJson = stepsJson;
+    }
+
+    @Nullable
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(@Nullable Long categoryId) {
+        this.categoryId = categoryId;
     }
 }

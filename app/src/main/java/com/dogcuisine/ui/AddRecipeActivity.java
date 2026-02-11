@@ -7,10 +7,13 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,12 +23,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dogcuisine.App;
 import com.dogcuisine.R;
 import com.dogcuisine.data.AppDatabase;
+import com.dogcuisine.data.CategoryDao;
+import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeDao;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
@@ -47,13 +53,19 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     private ImageView ivCover;
     private TextView tvCoverHint;
     private EditText etName;
+    private Spinner spCategory;
+    private NestedScrollView nsvAddRecipe;
     private RecyclerView rvSteps;
     private StepAdapter stepAdapter;
     private final List<StepItem> steps = new ArrayList<>();
     private String coverPath;
+    private Long selectedCategoryId;
+    private final List<CategoryEntity> categoryOptions = new ArrayList<>();
+    private ArrayAdapter<String> categorySpinnerAdapter;
 
     private ExecutorService ioExecutor;
     private RecipeDao recipeDao;
+    private CategoryDao categoryDao;
     private Gson gson = new Gson();
 
     private ActivityResultLauncher<String[]> coverPicker;
@@ -75,6 +87,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         App app = App.getInstance();
         ioExecutor = app.ioExecutor();
         recipeDao = app.getDatabase().recipeDao();
+        categoryDao = app.getDatabase().categoryDao();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarAdd);
         toolbar.setNavigationIcon(R.drawable.ic_back_gold);
@@ -98,10 +111,15 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         ivCover = findViewById(R.id.ivCover);
         tvCoverHint = findViewById(R.id.tvCoverHint);
         etName = findViewById(R.id.etName);
+        spCategory = findViewById(R.id.spCategory);
+        nsvAddRecipe = findViewById(R.id.nsvAddRecipe);
         rvSteps = findViewById(R.id.rvSteps);
         Button btnAddStep = findViewById(R.id.btnAddStep);
 
+        setupCategorySpinner();
+
         rvSteps.setLayoutManager(new LinearLayoutManager(this));
+        rvSteps.setNestedScrollingEnabled(false);
         steps.add(new StepItem());
         stepAdapter = new StepAdapter(steps, this, this);
         rvSteps.setAdapter(stepAdapter);
@@ -111,6 +129,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         btnAddStep.setOnClickListener(v -> addStep());
 
         registerPickers();
+        loadCategoriesForSpinner();
 
         editingId = getIntent().getLongExtra(EXTRA_RECIPE_ID, -1);
         if (editingId > 0) {
@@ -153,7 +172,13 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
 
     private void addStep() {
         steps.add(new StepItem());
-        stepAdapter.notifyItemInserted(steps.size() - 1);
+        int newPosition = steps.size() - 1;
+        stepAdapter.notifyItemInserted(newPosition);
+        rvSteps.post(() -> {
+            if (nsvAddRecipe != null) {
+                nsvAddRecipe.fullScroll(View.FOCUS_DOWN);
+            }
+        });
     }
 
     private void saveRecipe() {
@@ -163,16 +188,23 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
             return;
         }
 
-        long now = System.currentTimeMillis();
-        String stepsJson = gson.toJson(steps);
-        RecipeEntity entity;
-        if (editingId > 0) {
-            entity = new RecipeEntity(editingId, name, existingCreatedAt > 0 ? existingCreatedAt : now, now, "", coverPath, stepsJson);
-        } else {
-            entity = new RecipeEntity(null, name, now, now, "", coverPath, stepsJson);
-        }
+        final long now = System.currentTimeMillis();
+        final String stepsJson = gson.toJson(steps);
+        final long editingIdSnapshot = editingId;
+        final long existingCreatedAtSnapshot = existingCreatedAt;
+        final String coverPathSnapshot = coverPath;
 
         ioExecutor.execute(() -> {
+            Long categoryId = selectedCategoryId;
+            if (categoryId == null) {
+                categoryId = fetchDefaultCategoryId();
+            }
+            RecipeEntity entity;
+            if (editingIdSnapshot > 0) {
+                entity = new RecipeEntity(editingIdSnapshot, name, existingCreatedAtSnapshot > 0 ? existingCreatedAtSnapshot : now, now, "", coverPathSnapshot, stepsJson, categoryId);
+            } else {
+                entity = new RecipeEntity(null, name, now, now, "", coverPathSnapshot, stepsJson, categoryId);
+            }
             recipeDao.insert(entity);
             runOnUiThread(() -> {
                 Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
@@ -207,6 +239,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
                     return;
                 }
                 existingCreatedAt = entity.getCreatedAt();
+                selectedCategoryId = entity.getCategoryId();
                 etName.setText(entity.getName());
                 coverPath = entity.getCoverImagePath();
                 if (coverPath != null && !coverPath.isEmpty()) {
@@ -221,8 +254,85 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
                     steps.addAll(loaded);
                 }
                 stepAdapter.notifyDataSetChanged();
+                syncSpinnerSelection();
             });
         });
+    }
+
+    @Nullable
+    private Long fetchDefaultCategoryId() {
+        try {
+            List<CategoryEntity> categories = categoryDao.getAll();
+            if (categories != null && !categories.isEmpty()) {
+                return categories.get(0).getId();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private void setupCategorySpinner() {
+        categorySpinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new ArrayList<>());
+        categorySpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spCategory.setAdapter(categorySpinnerAdapter);
+        spCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position >= 0 && position < categoryOptions.size()) {
+                    selectedCategoryId = categoryOptions.get(position).getId();
+                } else {
+                    selectedCategoryId = null;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedCategoryId = null;
+            }
+        });
+    }
+
+    private void loadCategoriesForSpinner() {
+        ioExecutor.execute(() -> {
+            List<CategoryEntity> all = categoryDao.getAll();
+            if (all == null) all = new ArrayList<>();
+
+            List<String> displayNames = new ArrayList<>();
+            for (CategoryEntity c : all) {
+                displayNames.add(c.getName());
+            }
+
+            Long current = selectedCategoryId;
+            int selectionIndex = 0;
+            if (current != null) {
+                for (int i = 0; i < all.size(); i++) {
+                    if (current.equals(all.get(i).getId())) {
+                        selectionIndex = i;
+                        break;
+                    }
+                }
+            } else if (editingId <= 0 && !all.isEmpty()) {
+                selectionIndex = 0;
+                current = all.get(0).getId();
+            }
+
+            Long finalCurrent = current;
+            int finalSelectionIndex = selectionIndex;
+            List<CategoryEntity> finalAll = all;
+            runOnUiThread(() -> {
+                categoryOptions.clear();
+                categoryOptions.addAll(finalAll);
+                categorySpinnerAdapter.clear();
+                categorySpinnerAdapter.addAll(displayNames);
+                categorySpinnerAdapter.notifyDataSetChanged();
+                selectedCategoryId = finalCurrent;
+                spCategory.setSelection(finalSelectionIndex, false);
+            });
+        });
+    }
+
+    private void syncSpinnerSelection() {
+        loadCategoriesForSpinner();
     }
 
     private List<StepItem> parseSteps(String json) {

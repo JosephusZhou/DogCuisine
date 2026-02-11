@@ -55,8 +55,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/add_images"
-            android:backgroundTint="@color/teal_200"
-            android:textColor="#111827" />
+            android:backgroundTint="@color/purple_500"
+            android:textColor="@color/teal_200" />
 
         <Space
             android:layout_width="8dp"
@@ -68,7 +68,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/delete_step"
-            android:backgroundTint="@color/teal_200"
+            android:backgroundTint="@color/purple_500"
             android:textColor="#C2412D" />
     </LinearLayout>
 

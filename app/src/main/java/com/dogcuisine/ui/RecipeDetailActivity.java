@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dogcuisine.App;
 import com.dogcuisine.R;
+import com.dogcuisine.data.CategoryDao;
+import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeDao;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
@@ -38,12 +40,14 @@ public class RecipeDetailActivity extends AppCompatActivity {
 
     private ImageView ivCover;
     private TextView tvName;
+    private TextView tvCategory;
     private RecyclerView rvSteps;
     private StepDisplayAdapter stepAdapter;
 
     private long recipeId;
     private ExecutorService ioExecutor;
     private RecipeDao recipeDao;
+    private CategoryDao categoryDao;
     private final Gson gson = new Gson();
 
     @Override
@@ -58,6 +62,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
         App app = App.getInstance();
         ioExecutor = app.ioExecutor();
         recipeDao = app.getDatabase().recipeDao();
+        categoryDao = app.getDatabase().categoryDao();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarDetail);
         toolbar.setTitle(getString(R.string.recipes_title));
@@ -83,8 +88,10 @@ public class RecipeDetailActivity extends AppCompatActivity {
 
         ivCover = findViewById(R.id.ivDetailCover);
         tvName = findViewById(R.id.tvDetailName);
+        tvCategory = findViewById(R.id.tvDetailCategory);
         rvSteps = findViewById(R.id.rvDetailSteps);
         rvSteps.setLayoutManager(new LinearLayoutManager(this));
+        rvSteps.setNestedScrollingEnabled(false);
         stepAdapter = new StepDisplayAdapter();
         rvSteps.setAdapter(stepAdapter);
 
@@ -109,19 +116,28 @@ public class RecipeDetailActivity extends AppCompatActivity {
     private void loadRecipe() {
         ioExecutor.execute(() -> {
             RecipeEntity entity = recipeDao.getById(recipeId);
+            String categoryName = null;
+            if (entity != null && entity.getCategoryId() != null) {
+                CategoryEntity categoryEntity = categoryDao.getById(entity.getCategoryId());
+                if (categoryEntity != null) {
+                    categoryName = categoryEntity.getName();
+                }
+            }
+            String finalCategoryName = categoryName;
             runOnUiThread(() -> {
                 if (entity == null) {
                     Toast.makeText(this, "未找到菜谱", Toast.LENGTH_SHORT).show();
                     finish();
                     return;
                 }
-                bindRecipe(entity);
+                bindRecipe(entity, finalCategoryName);
             });
         });
     }
 
-    private void bindRecipe(RecipeEntity entity) {
+    private void bindRecipe(RecipeEntity entity, @Nullable String categoryName) {
         tvName.setText(entity.getName());
+        tvCategory.setText(categoryName != null ? categoryName : "未分类");
         String cover = entity.getCoverImagePath();
         if (cover != null && !cover.isEmpty()) {
             ivCover.setImageURI(Uri.fromFile(new File(cover)));
