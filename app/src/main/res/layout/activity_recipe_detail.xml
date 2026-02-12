@@ -26,12 +26,18 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <ImageView
-                android:id="@+id/ivDetailCover"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
-                android:background="#F3F4F6" />
+            <com.dogcuisine.ui.SquareFrameLayout
+                android:layout_width="240dp"
+                android:layout_height="240dp"
+                android:layout_gravity="center_horizontal"
+                android:background="#F3F4F6">
+
+                <ImageView
+                    android:id="@+id/ivDetailCover"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY" />
+            </com.dogcuisine.ui.SquareFrameLayout>
 
             <TextView
                 android:id="@+id/tvDetailName"

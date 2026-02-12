@@ -32,10 +32,11 @@
                 android:padding="16dp"
                 android:paddingBottom="96dp">
 
-                <FrameLayout
+                <com.dogcuisine.ui.SquareFrameLayout
                     android:id="@+id/flCover"
-                    android:layout_width="match_parent"
-                    android:layout_height="180dp"
+                    android:layout_width="240dp"
+                    android:layout_height="240dp"
+                    android:layout_gravity="center_horizontal"
                     android:background="#F3F4F6"
                     android:foregroundGravity="center">
 
@@ -43,7 +44,7 @@
                         android:id="@+id/ivCover"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
+                        android:scaleType="fitXY"
                         android:contentDescription="@string/add_cover" />
 
                     <TextView
@@ -54,7 +55,7 @@
                         android:text="@string/add_cover"
                         android:textColor="#6B7280"
                         android:textStyle="bold" />
-                </FrameLayout>
+                </com.dogcuisine.ui.SquareFrameLayout>
 
                 <EditText
                     android:id="@+id/etName"

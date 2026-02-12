@@ -76,6 +76,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     private Gson gson = new Gson();
 
     private ActivityResultLauncher<String[]> coverPicker;
+    private ActivityResultLauncher<android.content.Intent> coverCropLauncher;
     private ActivityResultLauncher<String[]> stepImagesPicker;
     private int pendingStepIndex = -1;
 
@@ -150,12 +151,24 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     private void registerPickers() {
         coverPicker = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
             if (uri != null) {
-                String path = copyAndCompressImage(uri, "cover");
-                if (path != null) {
-                    coverPath = path;
-                    ivCover.setImageURI(Uri.fromFile(new File(path)));
-                    tvCoverHint.setText("");
-                }
+                startCoverCrop(uri);
+            }
+        });
+
+        coverCropLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+                return;
+            }
+            String raw = result.getData().getStringExtra(CropCoverActivity.EXTRA_CROPPED_URI);
+            if (raw == null || raw.isEmpty()) {
+                return;
+            }
+            Uri uri = Uri.parse(raw);
+            String path = copyAndCompressCroppedCover(uri);
+            if (path != null) {
+                coverPath = path;
+                ivCover.setImageURI(Uri.fromFile(new File(path)));
+                tvCoverHint.setText("");
             }
         });
 
@@ -175,6 +188,12 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
 
     private void pickCover() {
         coverPicker.launch(new String[]{"image/*"});
+    }
+
+    private void startCoverCrop(@NonNull Uri sourceUri) {
+        android.content.Intent intent = new android.content.Intent(this, CropCoverActivity.class);
+        intent.putExtra(CropCoverActivity.EXTRA_SOURCE_URI, sourceUri.toString());
+        coverCropLauncher.launch(intent);
     }
 
     private void addStep() {
@@ -384,6 +403,35 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     }
 
     @Nullable
+    private String copyAndCompressCroppedCover(@NonNull Uri croppedUri) {
+        try {
+            Bitmap bitmap = decodeBitmapWithSample(croppedUri, MAX_IMAGE_LONG_EDGE);
+            if (bitmap == null) return null;
+            Bitmap square = cropCenterSquareIfNeeded(bitmap);
+            Bitmap scaled = scaleBitmapIfNeeded(square, MAX_IMAGE_LONG_EDGE);
+            byte[] compressed = compressToJpegBytes(scaled);
+
+            File dir = new File(getFilesDir(), "images");
+            if (!dir.exists()) dir.mkdirs();
+            String fileName = "cover_" + System.currentTimeMillis() + ".jpg";
+            File outFile = new File(dir, fileName);
+            try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                fos.write(compressed);
+                fos.flush();
+            }
+
+            if (!scaled.isRecycled()) scaled.recycle();
+            if (square != scaled && !square.isRecycled()) square.recycle();
+            if (bitmap != square && bitmap != scaled && !bitmap.isRecycled()) bitmap.recycle();
+            return outFile.getAbsolutePath();
+        } catch (Exception e) {
+            e.printStackTrace();
+            runOnUiThread(() -> Toast.makeText(this, "图片处理失败", Toast.LENGTH_SHORT).show());
+            return null;
+        }
+    }
+
+    @Nullable
     private Bitmap decodeBitmapWithSample(@NonNull Uri uri, int maxLongEdge) throws Exception {
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
@@ -476,5 +524,22 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
             quality -= 5;
         }
         return baos.toByteArray();
+    }
+
+    @NonNull
+    private Bitmap cropCenterSquareIfNeeded(@NonNull Bitmap source) {
+        int width = source.getWidth();
+        int height = source.getHeight();
+        if (width <= 0 || height <= 0 || width == height) {
+            return source;
+        }
+        int side = Math.min(width, height);
+        int left = (width - side) / 2;
+        int top = (height - side) / 2;
+        Bitmap square = Bitmap.createBitmap(source, left, top, side, side);
+        if (square != source) {
+            source.recycle();
+        }
+        return square;
     }
 }
