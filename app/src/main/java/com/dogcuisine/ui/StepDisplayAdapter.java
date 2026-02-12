@@ -48,10 +48,14 @@ public class StepDisplayAdapter extends RecyclerView.Adapter<StepDisplayAdapter.
         holder.imageContainer.removeAllViews();
         for (String path : item.getImagePaths()) {
             ImageView iv = new ImageView(holder.itemView.getContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(200, 200);
-            lp.setMargins(8, 0, 8, 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            lp.setMargins(0, 0, 0, 12);
             iv.setLayoutParams(lp);
-            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            iv.setAdjustViewBounds(true);
+            iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
             iv.setImageURI(Uri.fromFile(new File(path)));
             iv.setOnClickListener(v -> showImageDialog(holder.itemView.getContext(), path));
             holder.imageContainer.addView(iv);

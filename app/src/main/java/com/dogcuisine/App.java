@@ -50,9 +50,9 @@ public class App extends Application {
             if (count == 0) {
                 long now = System.currentTimeMillis();
                 List<RecipeEntity> seeds = Arrays.asList(
-                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]", defaultCategoryId),
-                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]", defaultCategoryId),
-                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]", defaultCategoryId)
+                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]", "", defaultCategoryId),
+                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]", "", defaultCategoryId),
+                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]", "", defaultCategoryId)
                 );
                 database.recipeDao().insertAll(seeds);
             }
@@ -117,6 +117,19 @@ public class App extends Application {
                                     databaseImagePaths.addAll(stepImagePaths);
                                 }
                             }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                // 添加食材图片路径
+                String ingredientJson = recipe.getIngredientJson();
+                if (ingredientJson != null && !ingredientJson.isEmpty()) {
+                    try {
+                        StepItem ingredient = gson.fromJson(ingredientJson, StepItem.class);
+                        if (ingredient != null && ingredient.getImagePaths() != null) {
+                            databaseImagePaths.addAll(ingredient.getImagePaths());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

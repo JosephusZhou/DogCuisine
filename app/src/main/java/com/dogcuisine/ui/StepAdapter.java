@@ -37,14 +37,23 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         void onDelete(int position);
     }
 
+    public interface StepInputFocusListener {
+        void onStepInputFocused(@NonNull View inputView, @NonNull View stepItemView);
+    }
+
     private final List<StepItem> steps;
     private final StepImageAddListener imageAddListener;
     private final StepDeleteListener deleteListener;
+    private final StepInputFocusListener inputFocusListener;
 
-    public StepAdapter(List<StepItem> steps, StepImageAddListener imageAddListener, StepDeleteListener deleteListener) {
+    public StepAdapter(List<StepItem> steps,
+                       StepImageAddListener imageAddListener,
+                       StepDeleteListener deleteListener,
+                       StepInputFocusListener inputFocusListener) {
         this.steps = steps;
         this.imageAddListener = imageAddListener;
         this.deleteListener = deleteListener;
+        this.inputFocusListener = inputFocusListener;
     }
 
     @NonNull
@@ -63,6 +72,11 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         holder.text.setText(item.getText());
         holder.watcher = new SimpleTextWatcher(item);
         holder.text.addTextChangedListener(holder.watcher);
+        holder.text.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && inputFocusListener != null) {
+                inputFocusListener.onStepInputFocused(v, holder.itemView);
+            }
+        });
 
         bindImages(holder, item);
 

@@ -1,5 +1,6 @@
 package com.dogcuisine.ui;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -7,9 +8,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -41,6 +44,11 @@ public class RecipeDetailActivity extends AppCompatActivity {
     private ImageView ivCover;
     private TextView tvName;
     private TextView tvCategory;
+    private TextView tvIngredientTitle;
+    private TextView tvIngredientText;
+    private LinearLayout llIngredientCard;
+    private LinearLayout llIngredientImages;
+    private TextView tvStepsTitle;
     private RecyclerView rvSteps;
     private StepDisplayAdapter stepAdapter;
 
@@ -89,6 +97,11 @@ public class RecipeDetailActivity extends AppCompatActivity {
         ivCover = findViewById(R.id.ivDetailCover);
         tvName = findViewById(R.id.tvDetailName);
         tvCategory = findViewById(R.id.tvDetailCategory);
+        tvIngredientTitle = findViewById(R.id.tvIngredientTitle);
+        tvIngredientText = findViewById(R.id.tvIngredientTextDisplay);
+        llIngredientCard = findViewById(R.id.llIngredientDisplayCard);
+        llIngredientImages = findViewById(R.id.llIngredientImagesDisplay);
+        tvStepsTitle = findViewById(R.id.tvStepsTitle);
         rvSteps = findViewById(R.id.rvDetailSteps);
         rvSteps.setLayoutManager(new LinearLayoutManager(this));
         rvSteps.setNestedScrollingEnabled(false);
@@ -142,6 +155,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
         if (cover != null && !cover.isEmpty()) {
             ivCover.setImageURI(Uri.fromFile(new File(cover)));
         }
+        bindIngredient(parseIngredient(entity.getIngredientJson()));
         List<StepItem> stepItems = parseSteps(entity.getStepsJson());
         stepAdapter.setData(stepItems);
     }
@@ -155,5 +169,77 @@ public class RecipeDetailActivity extends AppCompatActivity {
         } catch (Exception e) {
             return Collections.emptyList();
         }
+    }
+
+    @NonNull
+    private StepItem parseIngredient(@Nullable String json) {
+        if (json == null || json.isEmpty()) return new StepItem();
+        try {
+            StepItem item = gson.fromJson(json, StepItem.class);
+            return item != null ? item : new StepItem();
+        } catch (Exception e) {
+            return new StepItem();
+        }
+    }
+
+    private void bindIngredient(@NonNull StepItem ingredient) {
+        String text = ingredient.getText();
+        boolean hasText = text != null && !text.trim().isEmpty();
+
+        llIngredientImages.removeAllViews();
+        List<String> images = ingredient.getImagePaths();
+        if (images != null) {
+            for (String path : images) {
+                ImageView iv = new ImageView(this);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                lp.setMargins(0, 0, 0, 12);
+                iv.setLayoutParams(lp);
+                iv.setAdjustViewBounds(true);
+                iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                iv.setImageURI(Uri.fromFile(new File(path)));
+                iv.setOnClickListener(v -> showImageDialog(path));
+                llIngredientImages.addView(iv);
+            }
+        }
+        boolean hasImages = llIngredientImages.getChildCount() > 0;
+        tvIngredientText.setVisibility(hasText ? View.VISIBLE : View.GONE);
+        if (hasText) {
+            tvIngredientText.setText(text);
+        } else {
+            tvIngredientText.setText("暂无食材");
+            tvIngredientText.setTextColor(0xFF9CA3AF);
+            tvIngredientText.setVisibility(View.VISIBLE);
+        }
+        llIngredientImages.setVisibility(hasImages ? View.VISIBLE : View.GONE);
+        int imageTopMargin = hasText ? dp(8) : 0;
+        LinearLayout.LayoutParams imageLp = (LinearLayout.LayoutParams) llIngredientImages.getLayoutParams();
+        imageLp.topMargin = imageTopMargin;
+        llIngredientImages.setLayoutParams(imageLp);
+
+        if (hasText) {
+            tvIngredientText.setTextColor(0xFF111827);
+        }
+        tvIngredientTitle.setVisibility(View.VISIBLE);
+        llIngredientCard.setVisibility(View.VISIBLE);
+        tvStepsTitle.setVisibility(View.VISIBLE);
+    }
+
+    private void showImageDialog(@NonNull String path) {
+        Dialog dialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        ImageView iv = new ImageView(this);
+        iv.setImageURI(Uri.fromFile(new File(path)));
+        iv.setBackgroundColor(0xCC000000);
+        iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        iv.setOnClickListener(v -> dialog.dismiss());
+        dialog.setContentView(iv);
+        dialog.show();
+    }
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(value * density);
     }
 }

@@ -19,7 +19,7 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :id LIMIT 1")
     RecipeEntity getById(long id);
 
-    @Query("SELECT * FROM recipes WHERE name LIKE :keyword OR content LIKE :keyword ORDER BY updated_at DESC")
+    @Query("SELECT * FROM recipes WHERE name LIKE :keyword OR content LIKE :keyword OR ingredient_json LIKE :keyword ORDER BY updated_at DESC")
     List<RecipeEntity> searchByKeyword(String keyword);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

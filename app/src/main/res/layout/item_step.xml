@@ -21,14 +21,14 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:minHeight="64dp"
+        android:minLines="3"
         android:hint="请输入步骤文字（可选）"
         android:background="@android:color/transparent"
         android:textColor="#111827"
         android:textSize="15sp"
         android:padding="8dp"
         android:gravity="top|start"
-        android:inputType="textMultiLine"
-        android:maxLines="5" />
+        android:inputType="textMultiLine" />
 
     <HorizontalScrollView
         android:layout_width="match_parent"

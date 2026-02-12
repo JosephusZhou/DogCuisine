@@ -1,5 +1,6 @@
 package com.dogcuisine.data;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -34,12 +35,17 @@ public class RecipeEntity {
     @ColumnInfo(name = "steps_json", typeAffinity = ColumnInfo.TEXT)
     private String stepsJson;
 
+    // 食材序列化（JSON），结构与单个步骤一致（文字 + 多图）
+    @ColumnInfo(name = "ingredient_json", typeAffinity = ColumnInfo.TEXT, defaultValue = "''")
+    @NonNull
+    private String ingredientJson;
+
     // 菜谱分类 ID
     @ColumnInfo(name = "category_id")
     @Nullable
     private Long categoryId;
 
-    public RecipeEntity(@Nullable Long id, String name, long createdAt, long updatedAt, String content, @Nullable String coverImagePath, String stepsJson, @Nullable Long categoryId) {
+    public RecipeEntity(@Nullable Long id, String name, long createdAt, long updatedAt, String content, @Nullable String coverImagePath, String stepsJson, @NonNull String ingredientJson, @Nullable Long categoryId) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
@@ -47,6 +53,7 @@ public class RecipeEntity {
         this.content = content;
         this.coverImagePath = coverImagePath;
         this.stepsJson = stepsJson;
+        this.ingredientJson = ingredientJson;
         this.categoryId = categoryId;
     }
 
@@ -106,6 +113,15 @@ public class RecipeEntity {
 
     public void setStepsJson(String stepsJson) {
         this.stepsJson = stepsJson;
+    }
+
+    @NonNull
+    public String getIngredientJson() {
+        return ingredientJson;
+    }
+
+    public void setIngredientJson(@NonNull String ingredientJson) {
+        this.ingredientJson = ingredientJson;
     }
 
     @Nullable
