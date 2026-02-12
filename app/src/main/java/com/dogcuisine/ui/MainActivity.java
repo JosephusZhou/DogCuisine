@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MENU_ID_CATEGORY = 1000;
     private static final int MENU_ID_ADD = 1001;
     private static final int MENU_ID_SEARCH = 1002;
+    private static final int MENU_ID_SYNC = 1003;
     private static final long SPLASH_DURATION_MS = 3000L;
 
     private RecyclerView rvRecipes;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private final Gson gson = new Gson();
     private Long selectedCategoryId;
     private ActivityResultLauncher<Intent> categoryManageLauncher;
+    private ActivityResultLauncher<Intent> syncLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -75,10 +77,19 @@ public class MainActivity extends AppCompatActivity {
                 loadCategoriesFromDb();
             }
         });
+        syncLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK) {
+                database = App.getInstance().getDatabase();
+                loadCategoriesFromDb();
+            }
+        });
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(getString(R.string.recipes_title));
         toolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.teal_200));
+        if (toolbar.getOverflowIcon() != null) {
+            toolbar.getOverflowIcon().setTint(ContextCompat.getColor(this, R.color.teal_200));
+        }
         // 动态添加菜单项，避免缺失 menu_main 资源导致崩溃
         Menu menu = toolbar.getMenu();
         menu.clear();
@@ -91,6 +102,8 @@ public class MainActivity extends AppCompatActivity {
         MenuItem addItem = menu.add(Menu.NONE, MENU_ID_ADD, Menu.NONE, "添加");
         addItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         addItem.setIcon(R.drawable.ic_add_gold);
+        MenuItem syncItem = menu.add(Menu.NONE, MENU_ID_SYNC, Menu.NONE, "同步");
+        syncItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == MENU_ID_SEARCH) {
                 Intent intent = new Intent(MainActivity.this, SearchRecipeActivity.class);
@@ -104,6 +117,10 @@ public class MainActivity extends AppCompatActivity {
             } else if (item.getItemId() == MENU_ID_ADD) {
                 Intent intent = new Intent(MainActivity.this, AddRecipeActivity.class);
                 startActivity(intent);
+                return true;
+            } else if (item.getItemId() == MENU_ID_SYNC) {
+                Intent intent = new Intent(MainActivity.this, WebDavSyncActivity.class);
+                syncLauncher.launch(intent);
                 return true;
             }
             return false;

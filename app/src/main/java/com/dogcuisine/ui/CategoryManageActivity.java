@@ -119,6 +119,7 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
             }
             categoryDao.insertAll(list);
             runOnUiThread(() -> {
+                App.getInstance().requestAutoWebDavUploadIfConfigured();
                 Toast.makeText(this, "分类已保存", Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();

@@ -214,6 +214,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
             }
             recipeDao.insert(entity);
             runOnUiThread(() -> {
+                App.getInstance().requestAutoWebDavUploadIfConfigured();
                 Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();

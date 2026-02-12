@@ -10,6 +10,8 @@ import com.dogcuisine.data.CategoryDao;
 import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
+import com.dogcuisine.sync.WebDavSyncConfig;
+import com.dogcuisine.sync.WebDavSyncManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -19,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,6 +30,9 @@ public class App extends Application {
     private static App instance;
     private AppDatabase database;
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService autoSyncExecutor = Executors.newSingleThreadExecutor();
+    private final AtomicBoolean autoSyncRunning = new AtomicBoolean(false);
+    private final AtomicBoolean autoSyncRequested = new AtomicBoolean(false);
 
     @Override
     public void onCreate() {
@@ -158,6 +164,42 @@ public class App extends Application {
     @NonNull
     public AppDatabase getDatabase() {
         return database;
+    }
+
+    public synchronized void reloadDatabase() {
+        database = AppDatabase.resetInstance(this);
+    }
+
+    public void requestAutoWebDavUploadIfConfigured() {
+        WebDavSyncConfig config = WebDavSyncConfig.load(this);
+        if (config == null) {
+            return;
+        }
+        autoSyncRequested.set(true);
+        autoSyncExecutor.execute(() -> {
+            if (!autoSyncRunning.compareAndSet(false, true)) {
+                return;
+            }
+            try {
+                while (autoSyncRequested.getAndSet(false)) {
+                    WebDavSyncConfig latestConfig = WebDavSyncConfig.load(this);
+                    if (latestConfig == null) {
+                        break;
+                    }
+                    try {
+                        new WebDavSyncManager(this).upload(latestConfig.url, latestConfig.user, latestConfig.pass);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } finally {
+                autoSyncRunning.set(false);
+            }
+        });
+    }
+
+    public boolean isAutoWebDavUploading() {
+        return autoSyncRunning.get();
     }
 
     public ExecutorService ioExecutor() {

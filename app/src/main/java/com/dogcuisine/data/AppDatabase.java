@@ -19,13 +19,28 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
-                    INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                                    AppDatabase.class, "dogcuisine.db")
-                            .fallbackToDestructiveMigration()
-                            .build();
+                    INSTANCE = create(context);
                 }
             }
         }
         return INSTANCE;
+    }
+
+    @NonNull
+    public static synchronized AppDatabase resetInstance(@NonNull Context context) {
+        if (INSTANCE != null) {
+            INSTANCE.close();
+            INSTANCE = null;
+        }
+        INSTANCE = create(context);
+        return INSTANCE;
+    }
+
+    @NonNull
+    private static AppDatabase create(@NonNull Context context) {
+        return Room.databaseBuilder(context.getApplicationContext(),
+                        AppDatabase.class, "dogcuisine.db")
+                .fallbackToDestructiveMigration()
+                .build();
     }
 }

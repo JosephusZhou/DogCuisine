@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarSync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/etWebDavUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="WebDAV 目录 URL（例如：https://example.com/dav）"
+            android:inputType="textUri"
+            android:maxLines="1" />
+
+        <EditText
+            android:id="@+id/etWebDavUser"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="用户名"
+            android:inputType="text"
+            android:maxLines="1" />
+
+        <EditText
+            android:id="@+id/etWebDavPass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="密码"
+            android:inputType="textPassword"
+            android:maxLines="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnUploadSync"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="上传到 WebDAV"
+                android:backgroundTint="@color/purple_500"
+                android:textColor="@color/teal_200" />
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/btnDownloadSync"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="从 WebDAV 恢复"
+                android:backgroundTint="@color/purple_500"
+                android:textColor="@color/teal_200" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvSyncStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="#6B7280"
+            android:textSize="14sp"
+            android:text="说明：同步会包含数据库和所有图片。" />
+    </LinearLayout>
+
+</LinearLayout>
