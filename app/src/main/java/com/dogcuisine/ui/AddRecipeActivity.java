@@ -1,6 +1,7 @@
 package com.dogcuisine.ui;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -10,7 +11,8 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -29,19 +31,18 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dogcuisine.App;
 import com.dogcuisine.R;
-import com.dogcuisine.data.AppDatabase;
 import com.dogcuisine.data.CategoryDao;
 import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeDao;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.gson.Gson;
 
@@ -53,7 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.StepImageAddListener, StepAdapter.StepDeleteListener, StepAdapter.StepInputFocusListener {
+public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.StepImageAddListener, StepAdapter.StepDeleteListener, StepAdapter.StepTextClickListener {
 
     public static final String EXTRA_RECIPE_ID = "recipe_id";
     private static final int MENU_ID_SAVE = 2001;
@@ -71,7 +72,6 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     private RecyclerView rvSteps;
     private Button btnAddStep;
     private Button btnAddIngredientImages;
-    private View vKeyboardSpacer;
     private LinearLayout llIngredientImages;
     private StepAdapter stepAdapter;
     private final StepItem ingredient = new StepItem();
@@ -94,11 +94,6 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
 
     private long editingId = -1;
     private long existingCreatedAt = -1;
-    private int imeBottomInset = 0;
-    @Nullable
-    private View currentFocusedStepItem;
-    @Nullable
-    private View currentFocusedStepInput;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -143,10 +138,8 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         btnAddStep = findViewById(R.id.btnAddStep);
         btnAddIngredientImages = findViewById(R.id.btnAddIngredientImages);
         llIngredientImages = findViewById(R.id.llIngredientImages);
-        vKeyboardSpacer = findViewById(R.id.vKeyboardSpacer);
 
         setupCategorySpinner();
-        setupKeyboardAvoidance();
 
         rvSteps.setLayoutManager(new LinearLayoutManager(this));
         rvSteps.setNestedScrollingEnabled(false);
@@ -157,6 +150,11 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         FrameLayout flCover = findViewById(R.id.flCover);
         flCover.setOnClickListener(v -> pickCover());
         btnAddStep.setOnClickListener(v -> addStep());
+        configureInlineTextProxy(etIngredientText, () ->
+                showBottomTextEditor("编辑食材", etIngredientText.getText().toString(), text -> {
+                    ingredient.setText(text);
+                    etIngredientText.setText(text);
+                }));
         btnAddIngredientImages.setOnClickListener(v -> {
             if (ingredientImagesPicker != null) {
                 ingredientImagesPicker.launch(new String[]{"image/*"});
@@ -247,141 +245,83 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         });
     }
 
-    private void setupKeyboardAvoidance() {
-        ViewCompat.setOnApplyWindowInsetsListener(nsvAddRecipe, (v, insets) -> {
-            int imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-            int systemBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
-            imeBottomInset = Math.max(0, imeBottom - systemBottom);
-            if (imeBottomInset <= 0) {
-                setKeyboardSpacerHeight(0);
-            } else {
-                adjustFocusedStepForKeyboard(true);
-            }
-            return insets;
-        });
-        rvSteps.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-            if (imeBottomInset > 0) {
-                adjustFocusedStepForKeyboard(false);
-            }
-        });
+    private void configureInlineTextProxy(@NonNull EditText editText, @NonNull Runnable onClick) {
+        editText.setFocusable(false);
+        editText.setFocusableInTouchMode(false);
+        editText.setCursorVisible(false);
+        editText.setLongClickable(false);
+        editText.setTextIsSelectable(false);
+        editText.setOnClickListener(v -> onClick.run());
     }
 
     @Override
-    public void onStepInputFocused(@NonNull View inputView, @NonNull View stepItemView) {
-        currentFocusedStepInput = inputView;
-        currentFocusedStepItem = stepItemView;
-        if (imeBottomInset > 0) {
-            adjustFocusedStepForKeyboard(true);
-            nsvAddRecipe.postDelayed(() -> adjustFocusedStepForKeyboard(false), 120);
-        }
-    }
-
-    private void adjustFocusedStepForKeyboard(boolean smooth) {
-        if (imeBottomInset <= 0 || nsvAddRecipe == null) {
-            setKeyboardSpacerHeight(0);
-            return;
-        }
-        View focusedItem = resolveFocusedStepItem();
-        if (focusedItem == null) {
-            setKeyboardSpacerHeight(0);
-            return;
-        }
-        currentFocusedStepItem = focusedItem;
-
-        int bottomGap = getDistanceToScreenBottom(focusedItem);
-        int needLift = imeBottomInset - bottomGap;
-        if (needLift > 0) {
-            int dy = needLift + dp(12);
-            if (smooth) nsvAddRecipe.smoothScrollBy(0, dy);
-            else nsvAddRecipe.scrollBy(0, dy);
-        }
-
-        nsvAddRecipe.post(() -> {
-            if (imeBottomInset <= 0) {
-                setKeyboardSpacerHeight(0);
-                return;
-            }
-            View item = resolveFocusedStepItem();
-            if (item == null) {
-                setKeyboardSpacerHeight(0);
-                return;
-            }
-            int remaining = imeBottomInset - getDistanceToScreenBottom(item);
-            if (remaining > 0) {
-                setKeyboardSpacerHeight(remaining + dp(12));
-                nsvAddRecipe.post(() -> {
-                    View ref = resolveFocusedStepItem();
-                    if (ref != null) {
-                        int stillNeed = imeBottomInset - getDistanceToScreenBottom(ref);
-                        if (stillNeed > 0) {
-                            nsvAddRecipe.scrollBy(0, stillNeed + dp(12));
-                        }
-                    }
-                    ensureStepInputFocus();
-                });
-            } else {
-                setKeyboardSpacerHeight(0);
-                ensureStepInputFocus();
-            }
+    public void onStepTextClick(int position, @NonNull String currentText) {
+        showBottomTextEditor("编辑步骤", currentText, text -> {
+            if (position < 0 || position >= steps.size()) return;
+            steps.get(position).setText(text);
+            stepAdapter.notifyItemChanged(position);
         });
     }
 
-    @Nullable
-    private View resolveFocusedStepItem() {
-        if (currentFocusedStepInput != null && currentFocusedStepInput.isAttachedToWindow()) {
-            if (rvSteps != null) {
-                View item = rvSteps.findContainingItemView(currentFocusedStepInput);
-                if (item != null) {
-                    currentFocusedStepItem = item;
-                    return item;
-                }
+    private void showBottomTextEditor(@NonNull String title,
+                                      @Nullable String initialText,
+                                      @NonNull TextConfirmCallback callback) {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View content = getLayoutInflater().inflate(R.layout.dialog_bottom_text_editor, null, false);
+        TextView tvTitle = content.findViewById(R.id.tvBottomEditorTitle);
+        EditText etInput = content.findViewById(R.id.etBottomEditorInput);
+        Button btnCancel = content.findViewById(R.id.btnBottomEditorCancel);
+        Button btnConfirm = content.findViewById(R.id.btnBottomEditorConfirm);
+
+        tvTitle.setText(title);
+        etInput.setText(initialText == null ? "" : initialText);
+        etInput.setSelection(etInput.getText().length());
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnConfirm.setOnClickListener(v -> {
+            callback.onConfirm(etInput.getText() == null ? "" : etInput.getText().toString());
+            dialog.dismiss();
+        });
+
+        dialog.setContentView(content);
+        dialog.setOnShowListener(d -> {
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                        | WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
             }
-        }
-        if (currentFocusedStepItem != null && currentFocusedStepItem.isAttachedToWindow()) {
-            return currentFocusedStepItem;
-        }
-        View focus = getCurrentFocus();
-        if (focus == null) return null;
-        if (rvSteps != null) {
-            View item = rvSteps.findContainingItemView(focus);
-            if (item != null) return item;
-        }
-        return focus;
+            FrameLayout bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+                behavior.setSkipCollapsed(true);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                behavior.setDraggable(false);
+            }
+            etInput.post(() -> {
+                etInput.setFocusableInTouchMode(true);
+                etInput.requestFocus();
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
+            etInput.postDelayed(() -> {
+                if (!etInput.hasFocus()) {
+                    etInput.requestFocus();
+                }
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(etInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            }, 80);
+        });
+        dialog.show();
     }
 
-    private void ensureStepInputFocus() {
-        if (currentFocusedStepInput != null
-                && currentFocusedStepInput.isAttachedToWindow()
-                && !currentFocusedStepInput.hasFocus()) {
-            currentFocusedStepInput.requestFocus();
-        }
-    }
-
-    private int getDistanceToScreenBottom(@NonNull View target) {
-        int[] targetLoc = new int[2];
-        target.getLocationOnScreen(targetLoc);
-        int targetBottom = targetLoc[1] + target.getHeight();
-        View decor = getWindow().getDecorView();
-        int[] decorLoc = new int[2];
-        decor.getLocationOnScreen(decorLoc);
-        int screenBottom = decorLoc[1] + decor.getHeight();
-        return Math.max(0, screenBottom - targetBottom);
-    }
-
-    private void setKeyboardSpacerHeight(int height) {
-        if (vKeyboardSpacer == null) return;
-        ViewGroup.LayoutParams lp = vKeyboardSpacer.getLayoutParams();
-        if (lp == null) return;
-        int safeHeight = Math.max(0, height);
-        if (lp.height != safeHeight) {
-            lp.height = safeHeight;
-            vKeyboardSpacer.setLayoutParams(lp);
-        }
-    }
-
-    private int dp(int value) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(value * density);
+    private interface TextConfirmCallback {
+        void onConfirm(@NonNull String text);
     }
 
     private void saveRecipe() {

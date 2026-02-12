@@ -157,11 +157,6 @@
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="24dp" />
 
-                <View
-                    android:id="@+id/vKeyboardSpacer"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp" />
-
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 

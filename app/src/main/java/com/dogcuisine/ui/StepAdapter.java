@@ -3,8 +3,6 @@ package com.dogcuisine.ui;
 import android.app.Dialog;
 import android.content.Context;
 import android.net.Uri;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,23 +35,23 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         void onDelete(int position);
     }
 
-    public interface StepInputFocusListener {
-        void onStepInputFocused(@NonNull View inputView, @NonNull View stepItemView);
+    public interface StepTextClickListener {
+        void onStepTextClick(int position, @NonNull String currentText);
     }
 
     private final List<StepItem> steps;
     private final StepImageAddListener imageAddListener;
     private final StepDeleteListener deleteListener;
-    private final StepInputFocusListener inputFocusListener;
+    private final StepTextClickListener textClickListener;
 
     public StepAdapter(List<StepItem> steps,
                        StepImageAddListener imageAddListener,
                        StepDeleteListener deleteListener,
-                       StepInputFocusListener inputFocusListener) {
+                       StepTextClickListener textClickListener) {
         this.steps = steps;
         this.imageAddListener = imageAddListener;
         this.deleteListener = deleteListener;
-        this.inputFocusListener = inputFocusListener;
+        this.textClickListener = textClickListener;
     }
 
     @NonNull
@@ -68,13 +66,16 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         StepItem item = steps.get(position);
         holder.title.setText(holder.itemView.getContext().getString(R.string.step_title, position + 1));
 
-        holder.text.removeTextChangedListener(holder.watcher);
-        holder.text.setText(item.getText());
-        holder.watcher = new SimpleTextWatcher(item);
-        holder.text.addTextChangedListener(holder.watcher);
-        holder.text.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus && inputFocusListener != null) {
-                inputFocusListener.onStepInputFocused(v, holder.itemView);
+        String currentText = item.getText() == null ? "" : item.getText();
+        holder.text.setText(currentText);
+        holder.text.setFocusable(false);
+        holder.text.setFocusableInTouchMode(false);
+        holder.text.setCursorVisible(false);
+        holder.text.setOnClickListener(v -> {
+            int adapterPos = holder.getBindingAdapterPosition();
+            if (adapterPos >= 0 && adapterPos < steps.size() && textClickListener != null) {
+                String text = steps.get(adapterPos).getText();
+                textClickListener.onStepTextClick(adapterPos, text == null ? "" : text);
             }
         });
 
@@ -166,7 +167,6 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         final LinearLayout imageContainer;
         final Button btnAddImages;
         final Button btnDelete;
-        TextWatcher watcher;
 
         StepViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -175,20 +175,6 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             imageContainer = itemView.findViewById(R.id.llImages);
             btnAddImages = itemView.findViewById(R.id.btnAddImages);
             btnDelete = itemView.findViewById(R.id.btnDeleteStep);
-        }
-    }
-
-    static class SimpleTextWatcher implements TextWatcher {
-        private final StepItem item;
-
-        SimpleTextWatcher(StepItem item) {
-            this.item = item;
-        }
-
-        @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-        @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-        @Override public void afterTextChanged(Editable s) {
-            item.setText(s.toString());
         }
     }
 }
