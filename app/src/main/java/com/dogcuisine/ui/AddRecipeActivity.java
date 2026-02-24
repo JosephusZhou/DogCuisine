@@ -8,6 +8,7 @@ import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -51,6 +53,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -431,14 +434,47 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
             return;
         }
         for (String path : imagePaths) {
-            ImageView iv = new ImageView(this);
+            FrameLayout container = new FrameLayout(this);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(160, 160);
             lp.setMargins(8, 0, 8, 0);
-            iv.setLayoutParams(lp);
+            container.setLayoutParams(lp);
+
+            ImageView iv = new ImageView(this);
+            FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT);
+            iv.setLayoutParams(ivLp);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setImageURI(Uri.fromFile(new File(path)));
             iv.setOnClickListener(v -> showImageDialog(path));
-            llIngredientImages.addView(iv);
+
+            ImageButton close = new ImageButton(this);
+            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(56, 56);
+            closeLp.gravity = Gravity.END | Gravity.TOP;
+            close.setLayoutParams(closeLp);
+            close.setBackground(null);
+            close.setImageResource(R.drawable.ic_close_red);
+            close.setOnClickListener(v -> removeIngredientImage(path));
+
+            container.addView(iv);
+            container.addView(close);
+            llIngredientImages.addView(container);
+        }
+    }
+
+    private void removeIngredientImage(@NonNull String path) {
+        Iterator<String> it = ingredient.getImagePaths().iterator();
+        boolean removed = false;
+        while (it.hasNext()) {
+            String p = it.next();
+            if (p.equals(path)) {
+                it.remove();
+                removed = true;
+                break;
+            }
+        }
+        if (removed) {
+            bindIngredientImages();
         }
     }
 

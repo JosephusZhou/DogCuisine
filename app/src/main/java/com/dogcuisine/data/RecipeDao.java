@@ -19,6 +19,9 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :id LIMIT 1")
     RecipeEntity getById(long id);
 
+    @Query("SELECT COUNT(*) FROM recipes WHERE category_id = :categoryId")
+    long countByCategoryId(Long categoryId);
+
     @Query("SELECT * FROM recipes WHERE name LIKE :keyword OR content LIKE :keyword OR ingredient_json LIKE :keyword ORDER BY updated_at DESC")
     List<RecipeEntity> searchByKeyword(String keyword);
 

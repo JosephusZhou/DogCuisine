@@ -22,6 +22,9 @@ public interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id LIMIT 1")
     CategoryEntity getById(long id);
 
+    @Query("DELETE FROM categories WHERE id IN (:ids)")
+    void deleteByIds(List<Long> ids);
+
     @Query("SELECT COUNT(*) FROM categories")
     long count();
 }

@@ -21,6 +21,7 @@ import com.dogcuisine.App;
 import com.dogcuisine.R;
 import com.dogcuisine.data.CategoryDao;
 import com.dogcuisine.data.CategoryEntity;
+import com.dogcuisine.data.RecipeDao;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import java.util.ArrayList;
@@ -35,7 +36,9 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
     private CategoryManageAdapter adapter;
     private ItemTouchHelper itemTouchHelper;
     private CategoryDao categoryDao;
+    private RecipeDao recipeDao;
     private ExecutorService ioExecutor;
+    private List<Long> originalIds = new ArrayList<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -44,6 +47,7 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
 
         App app = App.getInstance();
         categoryDao = app.getDatabase().categoryDao();
+        recipeDao = app.getDatabase().recipeDao();
         ioExecutor = app.ioExecutor();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarCategory);
@@ -101,6 +105,12 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
         ioExecutor.execute(() -> {
             List<CategoryEntity> list = categoryDao.getAll();
             if (list == null) list = new ArrayList<>();
+            originalIds.clear();
+            for (CategoryEntity c : list) {
+                if (c.getId() != null) {
+                    originalIds.add(c.getId());
+                }
+            }
             List<CategoryEntity> finalList = list;
             runOnUiThread(() -> adapter.setData(finalList));
         });
@@ -113,9 +123,23 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
             return;
         }
         ioExecutor.execute(() -> {
+            List<Long> currentIds = new ArrayList<>();
             for (int i = 0; i < list.size(); i++) {
                 CategoryEntity entity = list.get(i);
                 entity.setSortOrder(i + 1);
+                if (entity.getId() != null) {
+                    currentIds.add(entity.getId());
+                }
+            }
+            // 删除被移除的旧分类
+            List<Long> toDelete = new ArrayList<>();
+            for (Long id : originalIds) {
+                if (!currentIds.contains(id)) {
+                    toDelete.add(id);
+                }
+            }
+            if (!toDelete.isEmpty()) {
+                categoryDao.deleteByIds(toDelete);
             }
             categoryDao.insertAll(list);
             runOnUiThread(() -> {
@@ -146,9 +170,29 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
     public void onDelete(@NonNull CategoryEntity category, int position) {
         List<CategoryEntity> list = adapter.getData();
         if (position < 0 || position >= list.size()) return;
-        list.remove(position);
-        adapter.notifyItemRemoved(position);
-        adapter.notifyItemRangeChanged(position, list.size() - position);
+        Long categoryId = category.getId();
+        if (categoryId == null) {
+            list.remove(position);
+            adapter.notifyItemRemoved(position);
+            adapter.notifyItemRangeChanged(position, list.size() - position);
+            return;
+        }
+        ioExecutor.execute(() -> {
+            long count = recipeDao.countByCategoryId(categoryId);
+            runOnUiThread(() -> {
+                if (count > 0) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("无法删除")
+                            .setMessage("该分类下有菜谱，无法删除。")
+                            .setPositiveButton("知道了", null)
+                            .show();
+                    return;
+                }
+                list.remove(position);
+                adapter.notifyItemRemoved(position);
+                adapter.notifyItemRangeChanged(position, list.size() - position);
+            });
+        });
     }
 
     @Override

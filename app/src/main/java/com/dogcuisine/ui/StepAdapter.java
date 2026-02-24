@@ -114,11 +114,11 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             iv.setImageURI(Uri.fromFile(new File(path)));
 
             ImageButton close = new ImageButton(holder.itemView.getContext());
-            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(48, 48);
+            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(56, 56);
             closeLp.gravity = Gravity.END | Gravity.TOP;
             close.setLayoutParams(closeLp);
             close.setBackground(null);
-            close.setImageResource(R.drawable.ic_close_gold);
+            close.setImageResource(R.drawable.ic_close_red);
             close.setOnClickListener(v -> removeImage(item, path, holder.getBindingAdapterPosition()));
 
             container.setOnClickListener(v -> showImageDialog(holder.itemView.getContext(), path));
