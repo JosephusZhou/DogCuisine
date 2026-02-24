@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MENU_ID_ADD = 1001;
     private static final int MENU_ID_SEARCH = 1002;
     private static final int MENU_ID_SYNC = 1003;
+    private static final int MENU_ID_BACKUP = 1004;
     private static final long SPLASH_DURATION_MS = 3000L;
 
     private RecyclerView rvRecipes;
@@ -104,6 +105,8 @@ public class MainActivity extends AppCompatActivity {
         addItem.setIcon(R.drawable.ic_add_gold);
         MenuItem syncItem = menu.add(Menu.NONE, MENU_ID_SYNC, Menu.NONE, "同步");
         syncItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+        MenuItem backupItem = menu.add(Menu.NONE, MENU_ID_BACKUP, Menu.NONE, "备份与恢复");
+        backupItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == MENU_ID_SEARCH) {
                 Intent intent = new Intent(MainActivity.this, SearchRecipeActivity.class);
@@ -120,6 +123,10 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             } else if (item.getItemId() == MENU_ID_SYNC) {
                 Intent intent = new Intent(MainActivity.this, WebDavSyncActivity.class);
+                syncLauncher.launch(intent);
+                return true;
+            } else if (item.getItemId() == MENU_ID_BACKUP) {
+                Intent intent = new Intent(MainActivity.this, BackupRestoreActivity.class);
                 syncLauncher.launch(intent);
                 return true;
             }

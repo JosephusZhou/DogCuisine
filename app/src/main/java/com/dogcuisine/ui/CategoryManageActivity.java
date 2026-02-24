@@ -1,5 +1,6 @@
 package com.dogcuisine.ui;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.Menu;
@@ -23,6 +24,7 @@ import com.dogcuisine.data.CategoryDao;
 import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeDao;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.color.MaterialColors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -181,11 +183,19 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
             long count = recipeDao.countByCategoryId(categoryId);
             runOnUiThread(() -> {
                 if (count > 0) {
-                    new AlertDialog.Builder(this)
+                    AlertDialog dialog = new AlertDialog.Builder(this)
                             .setTitle("无法删除")
                             .setMessage("该分类下有菜谱，无法删除。")
                             .setPositiveButton("知道了", null)
-                            .show();
+                            .create();
+                    dialog.setOnShowListener(d -> {
+                        int secondaryColor = MaterialColors.getColor(
+                                dialog.getContext(),
+                                com.google.android.material.R.attr.colorSecondary,
+                                ContextCompat.getColor(this, R.color.teal_200));
+                        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextColor(secondaryColor);
+                    });
+                    dialog.show();
                     return;
                 }
                 list.remove(position);
