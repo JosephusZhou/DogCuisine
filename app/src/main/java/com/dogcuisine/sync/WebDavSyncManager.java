@@ -35,6 +35,9 @@ public class WebDavSyncManager {
     private static final String TAG = "WebDavSync";
     private static final String REMOTE_MANIFEST = "manifest.json";
     private static final String REMOTE_DATA_DIR = "data";
+    private static final int CONNECT_TIMEOUT_MS = 60000; // 60s 连接超时
+    private static final int READ_TIMEOUT_MS = 120000;   // 120s 读超时
+    private static final int WRITE_TIMEOUT_MS = 120000;  // 120s 写超时（HttpURLConnection 无独立写超时，使用读超时兜底）
 
     private final Context context;
     private final Gson gson = new Gson();
@@ -406,8 +409,9 @@ public class WebDavSyncManager {
                                              @Nullable String password) throws Exception {
         URL url = new URL(rawUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(30000);
+        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        // HttpURLConnection 没有单独的写超时，使用较大的读超时覆盖长时间上传/下载
+        conn.setReadTimeout(Math.max(READ_TIMEOUT_MS, WRITE_TIMEOUT_MS));
         conn.setRequestMethod(method);
         conn.setUseCaches(false);
         if (username != null && !username.isEmpty()) {

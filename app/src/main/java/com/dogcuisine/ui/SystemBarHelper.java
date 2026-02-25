@@ -9,6 +9,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 public final class SystemBarHelper {
 
@@ -18,6 +19,10 @@ public final class SystemBarHelper {
                                        @Nullable View[] topInsetViews,
                                        @Nullable View[] bottomInsetViews) {
         WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(activity.getWindow(), activity.getWindow().getDecorView());
+        if (controller != null) {
+            controller.setAppearanceLightStatusBars(true);
+        }
         final View root = activity.findViewById(android.R.id.content);
 
         final Padding[] topBase = capturePadding(topInsetViews);

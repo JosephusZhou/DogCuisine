@@ -64,7 +64,7 @@ public class CategoryManageActivity extends AppCompatActivity implements Categor
         menu.clear();
         MenuItem saveItem = menu.add(Menu.NONE, MENU_ID_SAVE, Menu.NONE, "保存");
         saveItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        saveItem.setIcon(android.R.drawable.ic_menu_save);
+        saveItem.setIcon(R.drawable.ic_save_gold);
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == MENU_ID_SAVE) {
                 saveCategories();
