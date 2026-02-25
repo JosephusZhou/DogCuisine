@@ -12,7 +12,7 @@
         android:layout_height="32dp"
         android:padding="6dp"
         android:contentDescription="新增分类"
-        android:src="@android:drawable/ic_input_add" />
+        android:src="@drawable/ic_add_gold" />
 
     <TextView
         android:layout_width="wrap_content"

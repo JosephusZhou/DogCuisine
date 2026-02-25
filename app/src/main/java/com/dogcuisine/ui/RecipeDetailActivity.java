@@ -46,7 +46,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
     private TextView tvCategory;
     private TextView tvIngredientTitle;
     private TextView tvIngredientText;
-    private LinearLayout llIngredientCard;
+    private View llIngredientCard;
     private LinearLayout llIngredientImages;
     private TextView tvStepsTitle;
     private RecyclerView rvSteps;

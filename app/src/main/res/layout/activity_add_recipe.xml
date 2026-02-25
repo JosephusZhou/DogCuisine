@@ -4,15 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarAdd"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:titleTextColor="@android:color/white" />
+        style="@style/Widget.DogCuisine.Toolbar" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -37,7 +35,7 @@
                     android:layout_width="240dp"
                     android:layout_height="240dp"
                     android:layout_gravity="center_horizontal"
-                    android:background="#F3F4F6"
+                    android:background="?attr/colorSurfaceVariant"
                     android:foregroundGravity="center">
 
                     <ImageView
@@ -57,11 +55,20 @@
                         android:textStyle="bold" />
                 </com.dogcuisine.ui.SquareFrameLayout>
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="菜谱名称"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#111827" />
+
                 <EditText
                     android:id="@+id/etName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="8dp"
                     android:hint="@string/recipe_name_hint"
                     android:textSize="16sp"
                     android:textColor="#111827"
@@ -94,51 +101,60 @@
                     android:textStyle="bold"
                     android:textColor="#111827" />
 
-                <LinearLayout
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="8dp"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="#F9FAFB">
+                    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="1dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/colorOutline">
 
-                    <EditText
-                        android:id="@+id/etIngredientText"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="64dp"
-                        android:minLines="3"
-                        android:hint="请输入食材文字（可选）"
-                        android:background="@android:color/transparent"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:padding="8dp"
-                        android:gravity="top|start"
-                        android:inputType="textMultiLine" />
+                        android:orientation="vertical"
+                        android:padding="12dp">
 
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:scrollbars="none">
-
-                        <LinearLayout
-                            android:id="@+id/llIngredientImages"
-                            android:layout_width="wrap_content"
+                        <EditText
+                            android:id="@+id/etIngredientText"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal" />
-                    </HorizontalScrollView>
+                            android:minHeight="64dp"
+                            android:minLines="3"
+                            android:hint="请输入食材文字（可选）"
+                            android:background="@android:color/transparent"
+                            android:textColor="#111827"
+                            android:textSize="15sp"
+                            android:padding="8dp"
+                            android:gravity="top|start"
+                            android:inputType="textMultiLine" />
 
-                    <Button
-                        android:id="@+id/btnAddIngredientImages"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/add_images"
-                        android:backgroundTint="@color/purple_500"
-                        android:textColor="@color/teal_200" />
-                </LinearLayout>
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:scrollbars="none">
+
+                            <LinearLayout
+                                android:id="@+id/llIngredientImages"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal" />
+                        </HorizontalScrollView>
+
+                        <Button
+                            android:id="@+id/btnAddIngredientImages"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/add_images"
+                            android:backgroundTint="@color/purple_500"
+                            android:textColor="@color/teal_200" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:layout_width="wrap_content"

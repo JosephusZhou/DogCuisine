@@ -23,7 +23,7 @@
         android:padding="6dp"
         android:layout_marginStart="8dp"
         android:contentDescription="编辑"
-        android:src="@android:drawable/ic_menu_edit" />
+        android:src="@drawable/ic_edit_gold" />
 
     <ImageView
         android:id="@+id/ivDelete"
@@ -32,7 +32,7 @@
         android:padding="6dp"
         android:layout_marginStart="8dp"
         android:contentDescription="删除"
-        android:src="@android:drawable/ic_menu_delete" />
+        android:src="@drawable/ic_delete_gold" />
 
     <ImageView
         android:id="@+id/ivDrag"
@@ -41,6 +41,6 @@
         android:padding="6dp"
         android:layout_marginStart="8dp"
         android:contentDescription="拖动排序"
-        android:src="@android:drawable/ic_menu_sort_by_size" />
+        android:src="@drawable/ic_sort_gold" />
 
 </LinearLayout>

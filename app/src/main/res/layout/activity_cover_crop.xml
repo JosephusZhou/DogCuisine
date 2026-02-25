@@ -9,7 +9,7 @@
         android:id="@+id/toolbarCrop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary" />
+        style="@style/Widget.DogCuisine.Toolbar" />
 
     <FrameLayout
         android:id="@+id/flCropContainer"

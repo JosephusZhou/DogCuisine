@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MENU_ID_SEARCH = 1002;
     private static final int MENU_ID_SYNC = 1003;
     private static final int MENU_ID_BACKUP = 1004;
-    private static final long SPLASH_DURATION_MS = 3000L;
+    private static final long SPLASH_DURATION_MS = 2000L;
 
     private RecyclerView rvRecipes;
     private View tvRecipesEmpty;

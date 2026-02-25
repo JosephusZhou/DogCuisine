@@ -3,15 +3,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarBackup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        android:titleTextColor="@android:color/white" />
+        style="@style/Widget.DogCuisine.Toolbar" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -29,7 +27,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#F9FAFB"
+                android:background="?attr/colorSurfaceVariant"
                 android:padding="16dp">
 
                 <TextView
@@ -67,7 +65,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#F9FAFB"
+                android:background="?attr/colorSurfaceVariant"
                 android:padding="16dp">
 
                 <TextView
