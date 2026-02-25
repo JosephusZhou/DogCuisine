@@ -145,14 +145,13 @@
                                 android:orientation="horizontal" />
                         </HorizontalScrollView>
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAddIngredientImages"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="@string/add_images"
-                            android:backgroundTint="@color/purple_500"
-                            android:textColor="@color/teal_200" />
+                            style="@style/Widget.DogCuisine.Button.Outlined" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -176,15 +175,15 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAddStep"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_margin="16dp"
             android:text="@string/add_step"
-            android:backgroundTint="@color/purple_500"
-            android:textColor="@color/teal_200" />
+            app:backgroundTint="?attr/colorSurface"
+            style="@style/Widget.DogCuisine.Button.Outlined" />
 
     </FrameLayout>
 

@@ -45,4 +45,16 @@
         <item name="popupTheme">@style/ThemeOverlay.Material3.Light</item>
         <item name="android:elevation">4dp</item>
     </style>
+
+    <style name="TextAppearance.DogCuisine.Button" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="Widget.DogCuisine.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorSecondary</item>
+        <item name="android:textColor">?attr/colorSecondary</item>
+        <item name="android:textAppearance">@style/TextAppearance.DogCuisine.Button</item>
+    </style>
 </resources>

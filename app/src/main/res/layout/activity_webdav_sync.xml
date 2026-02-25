@@ -49,27 +49,25 @@
             android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUploadSync"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="上传到 WebDAV"
-                android:backgroundTint="@color/purple_500"
-                android:textColor="@color/teal_200" />
+                style="@style/Widget.DogCuisine.Button.Outlined" />
 
             <Space
                 android:layout_width="12dp"
                 android:layout_height="wrap_content" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDownloadSync"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="从 WebDAV 恢复"
-                android:backgroundTint="@color/purple_500"
-                android:textColor="@color/teal_200" />
+                style="@style/Widget.DogCuisine.Button.Outlined" />
         </LinearLayout>
 
         <TextView
