@@ -4,14 +4,15 @@ import androidx.annotation.Nullable;
 
 public final class LevelConfig {
 
-    private static final String[] LEVEL_NAMES = new String[]{
+    private static final String[] LEVEL_NAMES = new String[] {
+            "暗黑料理制造者",
             "狗狗学徒",
             "初级狗狗厨师",
             "中级狗狗厨霸",
             "高级狗狗厨王",
             "特级狗狗厨神"
     };
-    private static final int[] LEVEL_COUNTS = new int[]{10, 30, 50, 100, 200};
+    private static final int[] LEVEL_COUNTS = new int[]{10, 200, 300, 500, 800, 1000};
 
     private LevelConfig() {
     }
