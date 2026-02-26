@@ -1,14 +1,9 @@
 package com.dogcuisine.ui;
 
-import android.app.Dialog;
-import android.graphics.Color;
-import android.graphics.drawable.AnimatedImageDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,8 +28,7 @@ public class WebDavSyncActivity extends AppCompatActivity {
     private Button btnDownload;
     private TextView tvStatus;
     private ExecutorService ioExecutor;
-    private Dialog loadingDialog;
-    private AnimatedImageDrawable loadingDrawable;
+    private LoadingDialogHelper loadingDialogHelper;
     private boolean isSyncing = false;
 
     @Override
@@ -58,6 +52,7 @@ public class WebDavSyncActivity extends AppCompatActivity {
 
         App app = App.getInstance();
         ioExecutor = app.ioExecutor();
+        loadingDialogHelper = new LoadingDialogHelper(this);
 
         etUrl = findViewById(R.id.etWebDavUrl);
         etUser = findViewById(R.id.etWebDavUser);
@@ -174,40 +169,11 @@ public class WebDavSyncActivity extends AppCompatActivity {
     }
 
     private void showLoadingDialog() {
-        if (loadingDialog != null && loadingDialog.isShowing()) {
-            return;
-        }
-        loadingDialog = new Dialog(this);
-        loadingDialog.setContentView(R.layout.dialog_sync_loading);
-        loadingDialog.setCancelable(false);
-        loadingDialog.setCanceledOnTouchOutside(false);
-        if (loadingDialog.getWindow() != null) {
-            loadingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        }
-        ImageView ivAnim = loadingDialog.findViewById(R.id.ivSyncLoadingAnim);
-        if (ivAnim != null) {
-            ivAnim.setImageResource(R.drawable.sync_loading_dog);
-            if (ivAnim.getDrawable() instanceof AnimatedImageDrawable) {
-                loadingDrawable = (AnimatedImageDrawable) ivAnim.getDrawable();
-                loadingDrawable.setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
-                loadingDrawable.start();
-            }
-        }
-        loadingDialog.show();
+        loadingDialogHelper.show();
     }
 
     private void dismissLoadingDialog() {
-        if (loadingDialog == null) {
-            return;
-        }
-        if (loadingDrawable != null) {
-            loadingDrawable.stop();
-            loadingDrawable = null;
-        }
-        if (loadingDialog.isShowing()) {
-            loadingDialog.dismiss();
-        }
-        loadingDialog = null;
+        loadingDialogHelper.dismiss();
     }
 
     @Override

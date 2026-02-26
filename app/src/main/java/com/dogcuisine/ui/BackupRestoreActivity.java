@@ -1,10 +1,6 @@
 package com.dogcuisine.ui;
 
-import android.app.Dialog;
 import android.content.ContentValues;
-import android.graphics.Color;
-import android.graphics.drawable.AnimatedImageDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -49,8 +45,7 @@ public class BackupRestoreActivity extends AppCompatActivity {
     private TextView tvBackupStatus;
     private TextView tvRestoreStatus;
     private ExecutorService ioExecutor;
-    private Dialog loadingDialog;
-    private AnimatedImageDrawable loadingDrawable;
+    private LoadingDialogHelper loadingDialogHelper;
     private boolean isWorking = false;
     private ActivityResultLauncher<String[]> restorePicker;
 
@@ -75,6 +70,7 @@ public class BackupRestoreActivity extends AppCompatActivity {
 
         App app = App.getInstance();
         ioExecutor = app.ioExecutor();
+        loadingDialogHelper = new LoadingDialogHelper(this);
 
         btnBackup = findViewById(R.id.btnBackup);
         btnRestore = findViewById(R.id.btnRestore);
@@ -314,49 +310,17 @@ public class BackupRestoreActivity extends AppCompatActivity {
         btnBackup.setEnabled(!loading);
         btnRestore.setEnabled(!loading);
         if (loading) {
-            showLoadingDialog();
+            loadingDialogHelper.show();
         } else {
-            dismissLoadingDialog();
+            loadingDialogHelper.dismiss();
         }
-    }
-
-    private void showLoadingDialog() {
-        if (loadingDialog != null && loadingDialog.isShowing()) return;
-        loadingDialog = new Dialog(this);
-        loadingDialog.setContentView(R.layout.dialog_sync_loading);
-        loadingDialog.setCancelable(false);
-        loadingDialog.setCanceledOnTouchOutside(false);
-        if (loadingDialog.getWindow() != null) {
-            loadingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        }
-        View ivAnim = loadingDialog.findViewById(R.id.ivSyncLoadingAnim);
-        if (ivAnim instanceof android.widget.ImageView) {
-            android.widget.ImageView imageView = (android.widget.ImageView) ivAnim;
-            imageView.setImageResource(R.drawable.sync_loading_dog);
-            if (imageView.getDrawable() instanceof AnimatedImageDrawable) {
-                loadingDrawable = (AnimatedImageDrawable) imageView.getDrawable();
-                loadingDrawable.setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
-                loadingDrawable.start();
-            }
-        }
-        loadingDialog.show();
-    }
-
-    private void dismissLoadingDialog() {
-        if (loadingDialog == null) return;
-        if (loadingDrawable != null) {
-            loadingDrawable.stop();
-            loadingDrawable = null;
-        }
-        if (loadingDialog.isShowing()) {
-            loadingDialog.dismiss();
-        }
-        loadingDialog = null;
     }
 
     @Override
     protected void onDestroy() {
-        dismissLoadingDialog();
+        if (loadingDialogHelper != null) {
+            loadingDialogHelper.dismiss();
+        }
         super.onDestroy();
     }
 }
