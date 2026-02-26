@@ -2,6 +2,7 @@ package com.dogcuisine.ui;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dogcuisine.R;
 import com.dogcuisine.data.StepItem;
+import com.google.android.material.color.MaterialColors;
 
 import java.io.File;
 import java.util.Collections;
@@ -117,25 +119,36 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         for (int i = 0; i < images.size(); i++) {
             String path = images.get(i);
 
-            FrameLayout container = new FrameLayout(holder.itemView.getContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(160, 160);
-            lp.setMargins(8, 0, 8, 0);
+            Context context = holder.itemView.getContext();
+            int containerSize = 200;
+            int imageSize = Math.round(containerSize * 0.85f);
+            int closeSize = 48;
+            int imageMargin = 8;
+            int containerMargin = 8;
+
+            FrameLayout container = new FrameLayout(context);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(containerSize, containerSize);
+            lp.setMargins(containerMargin, 0, containerMargin, 0);
             container.setLayoutParams(lp);
 
-            ImageView iv = new ImageView(holder.itemView.getContext());
-            FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT);
+            ImageView iv = new ImageView(context);
+            FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(imageSize, imageSize);
+            ivLp.gravity = Gravity.BOTTOM | Gravity.START;
+            ivLp.setMargins(imageMargin, 0, 0, imageMargin);
             iv.setLayoutParams(ivLp);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setImageURI(Uri.fromFile(new File(path)));
 
-            ImageButton close = new ImageButton(holder.itemView.getContext());
-            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(56, 56);
+            ImageButton close = new ImageButton(context);
+            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(closeSize, closeSize);
             closeLp.gravity = Gravity.END | Gravity.TOP;
             close.setLayoutParams(closeLp);
-            close.setBackground(null);
-            close.setImageResource(R.drawable.ic_close_red);
+            close.setBackgroundResource(R.drawable.bg_icon_button_filled);
+            close.setImageResource(R.drawable.ic_close_gold);
+            close.setScaleType(ImageView.ScaleType.CENTER);
+            int tint = MaterialColors.getColor(close, com.google.android.material.R.attr.colorOnSecondary);
+            close.setImageTintList(ColorStateList.valueOf(tint));
+            close.setContentDescription("删除图片");
             close.setOnClickListener(v -> removeImage(item, path, holder.getBindingAdapterPosition()));
 
             container.setOnClickListener(v -> showImageDialog(holder.itemView.getContext(), path));
@@ -145,6 +158,8 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             holder.imageContainer.addView(container);
         }
     }
+
+    
 
     private void showImageDialog(@NonNull Context context, @NonNull String path) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);

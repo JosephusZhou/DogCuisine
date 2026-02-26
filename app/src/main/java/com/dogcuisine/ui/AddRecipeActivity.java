@@ -2,6 +2,7 @@ package com.dogcuisine.ui;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -44,6 +45,7 @@ import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeDao;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -468,25 +470,35 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         }
         for (String path : imagePaths) {
             FrameLayout container = new FrameLayout(this);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(160, 160);
-            lp.setMargins(8, 0, 8, 0);
+            int containerSize = 200;
+            int imageSize = Math.round(containerSize * 0.85f);
+            int closeSize = 48;
+            int imageMargin = 8;
+            int containerMargin = 8;
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(containerSize, containerSize);
+            lp.setMargins(containerMargin, 0, containerMargin, 0);
             container.setLayoutParams(lp);
 
             ImageView iv = new ImageView(this);
-            FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT);
+            FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(imageSize, imageSize);
+            ivLp.gravity = Gravity.BOTTOM | Gravity.START;
+            ivLp.setMargins(imageMargin, 0, 0, imageMargin);
             iv.setLayoutParams(ivLp);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setImageURI(Uri.fromFile(new File(path)));
             iv.setOnClickListener(v -> showImageDialog(path));
 
             ImageButton close = new ImageButton(this);
-            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(56, 56);
+            FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(closeSize, closeSize);
             closeLp.gravity = Gravity.END | Gravity.TOP;
             close.setLayoutParams(closeLp);
-            close.setBackground(null);
-            close.setImageResource(R.drawable.ic_close_red);
+            close.setBackgroundResource(R.drawable.bg_icon_button_filled);
+            close.setImageResource(R.drawable.ic_close_gold);
+            close.setScaleType(ImageView.ScaleType.CENTER);
+            int tint = MaterialColors.getColor(close, com.google.android.material.R.attr.colorOnSecondary);
+            close.setImageTintList(ColorStateList.valueOf(tint));
+            close.setContentDescription("删除图片");
             close.setOnClickListener(v -> removeIngredientImage(path));
 
             container.addView(iv);
