@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private Long selectedCategoryId;
     private ActivityResultLauncher<Intent> categoryManageLauncher;
     private ActivityResultLauncher<Intent> syncLauncher;
+    private MaterialToolbar toolbar;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(getString(R.string.recipes_title));
         toolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.teal_200));
         if (toolbar.getOverflowIcon() != null) {
@@ -221,7 +222,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        updateRecipeCountTitle();
         loadCategoriesFromDb();
+    }
+
+    private void updateRecipeCountTitle() {
+        ioExecutor.execute(() -> {
+            long count = database.recipeDao().count();
+            String baseTitle = getString(R.string.recipes_title);
+            String title = baseTitle + "（" + count + "）";
+            runOnUiThread(() -> {
+                if (toolbar != null) {
+                    toolbar.setTitle(title);
+                }
+            });
+        });
     }
 
     private void onCategorySelected(CategoryEntity category) {
