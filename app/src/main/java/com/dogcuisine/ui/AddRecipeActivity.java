@@ -3,6 +3,9 @@ package com.dogcuisine.ui;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.drawable.AnimatedImageDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -13,6 +16,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -42,9 +46,12 @@ import com.dogcuisine.App;
 import com.dogcuisine.R;
 import com.dogcuisine.data.CategoryDao;
 import com.dogcuisine.data.CategoryEntity;
+import com.dogcuisine.data.LevelConfig;
 import com.dogcuisine.data.RecipeDao;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
+import com.dogcuisine.data.UserProfileDao;
+import com.dogcuisine.data.UserProfileEntity;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -90,6 +97,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     private ExecutorService ioExecutor;
     private RecipeDao recipeDao;
     private CategoryDao categoryDao;
+    private UserProfileDao userProfileDao;
     private Gson gson = new Gson();
 
     private ActivityResultLauncher<String[]> coverPicker;
@@ -114,6 +122,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         ioExecutor = app.ioExecutor();
         recipeDao = app.getDatabase().recipeDao();
         categoryDao = app.getDatabase().categoryDao();
+        userProfileDao = app.getDatabase().userProfileDao();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarAdd);
         toolbar.setNavigationIcon(R.drawable.ic_back_gold);
@@ -389,11 +398,17 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
                 entity = new RecipeEntity(null, name, now, now, "", coverPathSnapshot, stepsJson, ingredientJson, categoryId);
             }
             recipeDao.insert(entity);
+            final String levelUpName = editingIdSnapshot > 0
+                    ? null
+                    : checkLevelUpIfNeeded();
             runOnUiThread(() -> {
                 App.getInstance().requestAutoWebDavUploadIfConfigured();
                 Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK);
-                finish();
+                if (levelUpName != null) {
+                    showLevelUpDialog(levelUpName);
+                } else {
+                    finishAfterSave();
+                }
             });
         });
     }
@@ -532,6 +547,107 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         iv.setOnClickListener(v -> dialog.dismiss());
         dialog.setContentView(iv);
         dialog.show();
+    }
+
+    @Nullable
+    private String checkLevelUpIfNeeded() {
+        try {
+            long recipeCount = recipeDao.count();
+            UserProfileEntity profile = userProfileDao.getProfile();
+            if (profile == null) {
+                long id = userProfileDao.insert(new UserProfileEntity(0, null));
+                profile = new UserProfileEntity(id, null);
+            }
+            String currentLevel = profile.getCurrentLevel();
+            if (currentLevel == null || currentLevel.trim().isEmpty()) {
+                int reachedIndex = LevelConfig.getHighestReachedIndex(recipeCount);
+                if (reachedIndex >= 0) {
+                long profileId = ensureProfileId(profile);
+                String levelName = LevelConfig.getLevelName(reachedIndex);
+                if (levelName == null) return null;
+                userProfileDao.updateLevel(profileId, levelName);
+                return levelName;
+                }
+                return null;
+            }
+            int currentIndex = LevelConfig.getLevelIndex(currentLevel);
+            if (currentIndex < 0) {
+                int reachedIndex = LevelConfig.getHighestReachedIndex(recipeCount);
+                if (reachedIndex >= 0) {
+                long profileId = ensureProfileId(profile);
+                String levelName = LevelConfig.getLevelName(reachedIndex);
+                if (levelName == null) return null;
+                userProfileDao.updateLevel(profileId, levelName);
+                return levelName;
+                }
+                return null;
+            }
+            int nextIndex = currentIndex + 1;
+            if (nextIndex < LevelConfig.size() && recipeCount >= LevelConfig.getRequiredCount(nextIndex)) {
+                long profileId = ensureProfileId(profile);
+                String levelName = LevelConfig.getLevelName(nextIndex);
+                if (levelName == null) return null;
+                userProfileDao.updateLevel(profileId, levelName);
+                return levelName;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private long ensureProfileId(@NonNull UserProfileEntity profile) {
+        if (profile.getId() != 0) {
+            return profile.getId();
+        }
+        return userProfileDao.insert(new UserProfileEntity(0, profile.getCurrentLevel()));
+    }
+
+    private void showLevelUpDialog(@NonNull String levelName) {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_level_up);
+        dialog.setCancelable(true);
+        dialog.setCanceledOnTouchOutside(true);
+        if (dialog.getWindow() != null) {
+            Window window = dialog.getWindow();
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+        TextView tvLevel = dialog.findViewById(R.id.tvLevelName);
+        if (tvLevel != null) {
+            tvLevel.setText(levelName);
+        }
+        View root = dialog.findViewById(R.id.levelUpRoot);
+        if (root != null) {
+            root.setOnClickListener(v -> dialog.dismiss());
+        }
+        View card = dialog.findViewById(R.id.levelUpCard);
+        if (card != null) {
+            int width = getResources().getDisplayMetrics().widthPixels;
+            int target = Math.round(width * 0.75f);
+            ViewGroup.LayoutParams params = card.getLayoutParams();
+            params.width = target;
+            card.setLayoutParams(params);
+            card.setOnClickListener(v -> dialog.dismiss());
+        }
+        ImageView ivCelebrate = dialog.findViewById(R.id.ivCelebrate);
+        final AnimatedImageDrawable[] animated = new AnimatedImageDrawable[1];
+        if (ivCelebrate != null && ivCelebrate.getDrawable() instanceof AnimatedImageDrawable) {
+            animated[0] = (AnimatedImageDrawable) ivCelebrate.getDrawable();
+            animated[0].setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
+            animated[0].start();
+        }
+        dialog.setOnDismissListener(d -> {
+            if (animated[0] != null) {
+                animated[0].stop();
+            }
+            finishAfterSave();
+        });
+        dialog.show();
+    }
+
+    private void finishAfterSave() {
+        setResult(RESULT_OK);
+        finish();
     }
 
     private void setupCategorySpinner() {

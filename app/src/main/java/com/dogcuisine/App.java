@@ -10,6 +10,7 @@ import com.dogcuisine.data.CategoryDao;
 import com.dogcuisine.data.CategoryEntity;
 import com.dogcuisine.data.RecipeEntity;
 import com.dogcuisine.data.StepItem;
+import com.dogcuisine.data.UserProfileEntity;
 import com.dogcuisine.sync.WebDavSyncConfig;
 import com.dogcuisine.sync.WebDavSyncManager;
 import com.google.gson.Gson;
@@ -45,6 +46,7 @@ public class App extends Application {
             database.getOpenHelper().getWritableDatabase();
             CategoryDao categoryDao = database.categoryDao();
             Long defaultCategoryId = ensureDefaultCategories(categoryDao);
+            ensureUserProfile(database);
 
             long count = database.recipeDao().count();
             if (count == 0) {
@@ -163,6 +165,16 @@ public class App extends Application {
             
             if (deletedCount > 0) {
                 // 可以选择在这里添加日志，记录删除的图片数量
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void ensureUserProfile(@NonNull AppDatabase database) {
+        try {
+            if (database.userProfileDao().count() == 0) {
+                database.userProfileDao().insert(new UserProfileEntity(0, null));
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {RecipeEntity.class, CategoryEntity.class}, version = 4, exportSchema = false)
+@Database(entities = {RecipeEntity.class, CategoryEntity.class, UserProfileEntity.class}, version = 5, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
@@ -19,9 +19,18 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL("ALTER TABLE recipes ADD COLUMN ingredient_json TEXT NOT NULL DEFAULT ''");
         }
     };
+    private static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS user_profile (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "current_level TEXT)");
+        }
+    };
 
     public abstract RecipeDao recipeDao();
     public abstract CategoryDao categoryDao();
+    public abstract UserProfileDao userProfileDao();
 
     public static AppDatabase getInstance(@NonNull Context context) {
         if (INSTANCE == null) {
@@ -48,7 +57,7 @@ public abstract class AppDatabase extends RoomDatabase {
     private static AppDatabase create(@NonNull Context context) {
         return Room.databaseBuilder(context.getApplicationContext(),
                         AppDatabase.class, "dogcuisine.db")
-                .addMigrations(MIGRATION_3_4)
+                .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
                 .build();
     }
 }
