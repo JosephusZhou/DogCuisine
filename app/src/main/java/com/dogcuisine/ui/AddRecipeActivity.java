@@ -33,6 +33,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -149,6 +150,38 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
         steps.add(new StepItem());
         stepAdapter = new StepAdapter(steps, this, this, this);
         rvSteps.setAdapter(stepAdapter);
+        
+        // 设置拖拽排序
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, 
+                                 @NonNull RecyclerView.ViewHolder viewHolder,
+                                 @NonNull RecyclerView.ViewHolder target) {
+                int fromPosition = viewHolder.getBindingAdapterPosition();
+                int toPosition = target.getBindingAdapterPosition();
+                if (fromPosition != RecyclerView.NO_POSITION && toPosition != RecyclerView.NO_POSITION) {
+                    stepAdapter.moveItem(fromPosition, toPosition);
+                }
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // 不支持滑动删除
+            }
+
+            @Override
+            public boolean isLongPressDragEnabled() {
+                return false; // 禁用长按拖动，通过拖拽图标触发
+            }
+        });
+        itemTouchHelper.attachToRecyclerView(rvSteps);
+        
+        // 设置拖拽图标的长按监听
+        stepAdapter.setDragStartListener((viewHolder) -> {
+            itemTouchHelper.startDrag(viewHolder);
+        });
 
         FrameLayout flCover = findViewById(R.id.flCover);
         flCover.setOnClickListener(v -> pickCover());

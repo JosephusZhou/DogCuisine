@@ -22,6 +22,7 @@ import com.dogcuisine.R;
 import com.dogcuisine.data.StepItem;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -39,10 +40,15 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         void onStepTextClick(int position, @NonNull String currentText);
     }
 
+    public interface DragStartListener {
+        void onDragStart(@NonNull RecyclerView.ViewHolder viewHolder);
+    }
+
     private final List<StepItem> steps;
     private final StepImageAddListener imageAddListener;
     private final StepDeleteListener deleteListener;
     private final StepTextClickListener textClickListener;
+    private DragStartListener dragStartListener;
 
     public StepAdapter(List<StepItem> steps,
                        StepImageAddListener imageAddListener,
@@ -91,6 +97,17 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             if (deleteListener != null) {
                 deleteListener.onDelete(holder.getBindingAdapterPosition());
             }
+        });
+        
+        // 设置拖拽图标的长按监听
+        holder.ivDragHandle.setOnLongClickListener(v -> {
+            if (dragStartListener != null) {
+                int adapterPos = holder.getBindingAdapterPosition();
+                if (adapterPos != RecyclerView.NO_POSITION) {
+                    dragStartListener.onDragStart(holder);
+                }
+            }
+            return true;
         });
     }
 
@@ -161,12 +178,29 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         return steps.size();
     }
 
+    public void moveItem(int fromPosition, int toPosition) {
+        if (fromPosition < 0 || fromPosition >= steps.size() || toPosition < 0 || toPosition >= steps.size()) {
+            return;
+        }
+        Collections.swap(steps, fromPosition, toPosition);
+        notifyItemMoved(fromPosition, toPosition);
+        // 更新所有受影响项的步骤编号
+        int start = Math.min(fromPosition, toPosition);
+        int end = Math.max(fromPosition, toPosition);
+        notifyItemRangeChanged(start, end - start + 1);
+    }
+
+    public void setDragStartListener(DragStartListener listener) {
+        this.dragStartListener = listener;
+    }
+
     static class StepViewHolder extends RecyclerView.ViewHolder {
         final TextView title;
         final EditText text;
         final LinearLayout imageContainer;
         final Button btnAddImages;
         final Button btnDelete;
+        final ImageView ivDragHandle;
 
         StepViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -175,6 +209,7 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             imageContainer = itemView.findViewById(R.id.llImages);
             btnAddImages = itemView.findViewById(R.id.btnAddImages);
             btnDelete = itemView.findViewById(R.id.btnDeleteStep);
+            ivDragHandle = itemView.findViewById(R.id.ivDragHandle);
         }
     }
 }
