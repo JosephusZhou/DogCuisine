@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 public class RecipeDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_RECIPE_ID = "recipe_id";
+    private static final int MENU_ID_FAVORITE = 3000;
     private static final int MENU_ID_EDIT = 3001;
 
     private ImageView ivCover;
@@ -51,6 +52,8 @@ public class RecipeDetailActivity extends AppCompatActivity {
     private TextView tvStepsTitle;
     private RecyclerView rvSteps;
     private StepDisplayAdapter stepAdapter;
+    private MenuItem favoriteItem;
+    private int currentFavorite = 0;
 
     private long recipeId;
     private ExecutorService ioExecutor;
@@ -81,11 +84,18 @@ public class RecipeDetailActivity extends AppCompatActivity {
         // 右侧编辑菜单，使用温暖米金配色，与添加/保存统一
         Menu menu = toolbar.getMenu();
         menu.clear();
+        MenuItem favoriteMenuItem = menu.add(Menu.NONE, MENU_ID_FAVORITE, Menu.NONE, "收藏");
+        favoriteMenuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        favoriteMenuItem.setIcon(R.drawable.ic_favorite_border_gold);
+        favoriteItem = favoriteMenuItem;
         MenuItem editItem = menu.add(Menu.NONE, MENU_ID_EDIT, Menu.NONE, "修改");
         editItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         editItem.setIcon(R.drawable.ic_edit_gold);
         toolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == MENU_ID_EDIT) {
+            if (item.getItemId() == MENU_ID_FAVORITE) {
+                toggleFavorite();
+                return true;
+            } else if (item.getItemId() == MENU_ID_EDIT) {
                 Intent intent = new Intent(this, AddRecipeActivity.class);
                 intent.putExtra(AddRecipeActivity.EXTRA_RECIPE_ID, recipeId);
                 startActivity(intent);
@@ -151,6 +161,8 @@ public class RecipeDetailActivity extends AppCompatActivity {
     private void bindRecipe(RecipeEntity entity, @Nullable String categoryName) {
         tvName.setText(entity.getName());
         tvCategory.setText(categoryName != null ? categoryName : "未分类");
+        currentFavorite = entity.getIsFavorite();
+        updateFavoriteIcon();
         String cover = entity.getCoverImagePath();
         if (cover != null && !cover.isEmpty()) {
             ivCover.setImageURI(Uri.fromFile(new File(cover)));
@@ -158,6 +170,26 @@ public class RecipeDetailActivity extends AppCompatActivity {
         bindIngredient(parseIngredient(entity.getIngredientJson()));
         List<StepItem> stepItems = parseSteps(entity.getStepsJson());
         stepAdapter.setData(stepItems);
+    }
+
+    private void toggleFavorite() {
+        if (recipeId <= 0) return;
+        int nextFavorite = currentFavorite == 1 ? 0 : 1;
+        ioExecutor.execute(() -> {
+            recipeDao.updateFavorite(recipeId, nextFavorite);
+            runOnUiThread(() -> {
+                currentFavorite = nextFavorite;
+                updateFavoriteIcon();
+            });
+        });
+    }
+
+    private void updateFavoriteIcon() {
+        if (favoriteItem == null) return;
+        int icon = currentFavorite == 1
+                ? R.drawable.ic_favorite_gold
+                : R.drawable.ic_favorite_border_gold;
+        favoriteItem.setIcon(icon);
     }
 
     private List<StepItem> parseSteps(String json) {

@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {RecipeEntity.class, CategoryEntity.class, UserProfileEntity.class}, version = 6, exportSchema = false)
+@Database(entities = {RecipeEntity.class, CategoryEntity.class, UserProfileEntity.class}, version = 7, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
@@ -31,6 +31,12 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
             database.execSQL("UPDATE user_profile SET current_level = NULL");
+        }
+    };
+    private static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE recipes ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0");
         }
     };
 
@@ -63,7 +69,7 @@ public abstract class AppDatabase extends RoomDatabase {
     private static AppDatabase create(@NonNull Context context) {
         return Room.databaseBuilder(context.getApplicationContext(),
                         AppDatabase.class, "dogcuisine.db")
-                .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build();
     }
 }

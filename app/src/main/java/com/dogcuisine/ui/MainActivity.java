@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MENU_ID_SYNC = 1003;
     private static final int MENU_ID_BACKUP = 1004;
     private static final long SPLASH_DURATION_MS = 2000L;
+    private static final Long FAVORITES_CATEGORY_ID = -1L;
 
     private RecyclerView rvRecipes;
     private View tvRecipesEmpty;
@@ -249,9 +250,12 @@ public class MainActivity extends AppCompatActivity {
         ioExecutor.execute(() -> {
             List<CategoryEntity> categories = database.categoryDao().getAll();
             Long nextSelected = selectedCategoryId;
+            if (nextSelected == null) {
+                nextSelected = FAVORITES_CATEGORY_ID;
+            }
             if (categories != null && !categories.isEmpty()) {
-                boolean hasSelected = false;
-                if (nextSelected != null) {
+                boolean hasSelected = FAVORITES_CATEGORY_ID.equals(nextSelected);
+                if (!hasSelected) {
                     for (CategoryEntity c : categories) {
                         if (nextSelected.equals(c.getId())) {
                             hasSelected = true;
@@ -263,13 +267,16 @@ public class MainActivity extends AppCompatActivity {
                     nextSelected = categories.get(0).getId();
                 }
             } else {
-                nextSelected = null;
+                nextSelected = FAVORITES_CATEGORY_ID;
             }
             Long finalNextSelected = nextSelected;
             List<CategoryEntity> safeList = categories != null ? categories : new ArrayList<>();
+            List<CategoryEntity> displayList = new ArrayList<>();
+            displayList.add(new CategoryEntity(FAVORITES_CATEGORY_ID, "收藏", Integer.MIN_VALUE));
+            displayList.addAll(safeList);
             runOnUiThread(() -> {
                 selectedCategoryId = finalNextSelected;
-                categoryAdapter.setCategories(safeList);
+                categoryAdapter.setCategories(displayList);
                 categoryAdapter.setSelectedCategoryId(selectedCategoryId);
                 loadRecipesForSelectedCategory();
             });
@@ -278,7 +285,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadRecipesForSelectedCategory() {
         ioExecutor.execute(() -> {
-            List<RecipeEntity> list = database.recipeDao().getByCategoryId(selectedCategoryId);
+            List<RecipeEntity> list;
+            if (FAVORITES_CATEGORY_ID.equals(selectedCategoryId)) {
+                list = database.recipeDao().getFavorites();
+            } else {
+                list = database.recipeDao().getByCategoryId(selectedCategoryId);
+            }
             runOnUiThread(() -> {
                 adapter.setRecipes(list);
                 boolean isEmpty = list == null || list.isEmpty();

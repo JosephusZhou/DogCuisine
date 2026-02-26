@@ -25,6 +25,9 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE name LIKE :keyword OR content LIKE :keyword OR ingredient_json LIKE :keyword ORDER BY updated_at DESC")
     List<RecipeEntity> searchByKeyword(String keyword);
 
+    @Query("SELECT * FROM recipes WHERE is_favorite = 1 ORDER BY updated_at DESC")
+    List<RecipeEntity> getFavorites();
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<RecipeEntity> recipes);
 
@@ -33,6 +36,9 @@ public interface RecipeDao {
 
     @Query("DELETE FROM recipes WHERE id = :id")
     void deleteById(long id);
+
+    @Query("UPDATE recipes SET is_favorite = :favorite WHERE id = :id")
+    void updateFavorite(long id, int favorite);
 
     @Query("SELECT COUNT(*) FROM recipes")
     long count();

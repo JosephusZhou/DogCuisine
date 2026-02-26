@@ -91,6 +91,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
     private final List<StepItem> steps = new ArrayList<>();
     private String coverPath;
     private Long selectedCategoryId;
+    private int editingFavorite = 0;
     private final List<CategoryEntity> categoryOptions = new ArrayList<>();
     private ArrayAdapter<String> categorySpinnerAdapter;
 
@@ -393,9 +394,9 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
             }
             RecipeEntity entity;
             if (editingIdSnapshot > 0) {
-                entity = new RecipeEntity(editingIdSnapshot, name, existingCreatedAtSnapshot > 0 ? existingCreatedAtSnapshot : now, now, "", coverPathSnapshot, stepsJson, ingredientJson, categoryId);
+                entity = new RecipeEntity(editingIdSnapshot, name, existingCreatedAtSnapshot > 0 ? existingCreatedAtSnapshot : now, now, "", coverPathSnapshot, stepsJson, ingredientJson, categoryId, editingFavorite);
             } else {
-                entity = new RecipeEntity(null, name, now, now, "", coverPathSnapshot, stepsJson, ingredientJson, categoryId);
+                entity = new RecipeEntity(null, name, now, now, "", coverPathSnapshot, stepsJson, ingredientJson, categoryId, 0);
             }
             recipeDao.insert(entity);
             final String levelUpName = editingIdSnapshot > 0
@@ -439,6 +440,7 @@ public class AddRecipeActivity extends AppCompatActivity implements StepAdapter.
                 }
                 existingCreatedAt = entity.getCreatedAt();
                 selectedCategoryId = entity.getCategoryId();
+                editingFavorite = entity.getIsFavorite();
                 etName.setText(entity.getName());
                 coverPath = entity.getCoverImagePath();
                 if (coverPath != null && !coverPath.isEmpty()) {

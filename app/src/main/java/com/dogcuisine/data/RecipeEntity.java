@@ -45,7 +45,11 @@ public class RecipeEntity {
     @Nullable
     private Long categoryId;
 
-    public RecipeEntity(@Nullable Long id, String name, long createdAt, long updatedAt, String content, @Nullable String coverImagePath, String stepsJson, @NonNull String ingredientJson, @Nullable Long categoryId) {
+    // 是否收藏：1 收藏，0 未收藏
+    @ColumnInfo(name = "is_favorite", defaultValue = "0")
+    private int isFavorite;
+
+    public RecipeEntity(@Nullable Long id, String name, long createdAt, long updatedAt, String content, @Nullable String coverImagePath, String stepsJson, @NonNull String ingredientJson, @Nullable Long categoryId, int isFavorite) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
@@ -55,6 +59,7 @@ public class RecipeEntity {
         this.stepsJson = stepsJson;
         this.ingredientJson = ingredientJson;
         this.categoryId = categoryId;
+        this.isFavorite = isFavorite;
     }
 
     @Nullable
@@ -131,5 +136,13 @@ public class RecipeEntity {
 
     public void setCategoryId(@Nullable Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public int getIsFavorite() {
+        return isFavorite;
+    }
+
+    public void setIsFavorite(int isFavorite) {
+        this.isFavorite = isFavorite;
     }
 }

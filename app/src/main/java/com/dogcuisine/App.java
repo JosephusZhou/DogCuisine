@@ -52,9 +52,9 @@ public class App extends Application {
             if (count == 0) {
                 long now = System.currentTimeMillis();
                 List<RecipeEntity> seeds = Arrays.asList(
-                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]", "", defaultCategoryId),
-                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]", "", defaultCategoryId),
-                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]", "", defaultCategoryId)
+                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]", "", defaultCategoryId, 0),
+                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]", "", defaultCategoryId, 0),
+                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]", "", defaultCategoryId, 0)
                 );
                 database.recipeDao().insertAll(seeds);
             }
