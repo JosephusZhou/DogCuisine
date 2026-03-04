@@ -57,4 +57,12 @@
         <item name="android:textColor">?attr/colorSecondary</item>
         <item name="android:textAppearance">@style/TextAppearance.DogCuisine.Button</item>
     </style>
+
+    <style name="ThemeOverlay.DogCuisine.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.DogCuisine.BottomSheet.Modal</item>
+    </style>
+
+    <style name="Widget.DogCuisine.BottomSheet.Modal" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">#FFFDF7</item>
+    </style>
 </resources>

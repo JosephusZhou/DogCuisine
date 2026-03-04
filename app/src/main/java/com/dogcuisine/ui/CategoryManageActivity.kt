@@ -1,0 +1,576 @@
+package com.dogcuisine.ui
+
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.dogcuisine.App
+import com.dogcuisine.R
+import com.dogcuisine.data.CategoryDao
+import com.dogcuisine.data.CategoryEntity
+import com.dogcuisine.data.RecipeDao
+import java.util.concurrent.ExecutorService
+import kotlin.math.roundToInt
+
+private data class EditableCategory(
+    val id: Long?,
+    val name: String,
+    val uiKey: Long
+)
+
+private data class NameDialogState(
+    val title: String,
+    val editingIndex: Int?
+)
+
+class CategoryManageActivity : AppCompatActivity() {
+
+    private val categories = mutableStateListOf<EditableCategory>()
+    private val originalIds = mutableListOf<Long>()
+    private var baselineState: List<Pair<Long?, String>> = emptyList()
+    private var nextTempUiKey = -1L
+
+    private lateinit var categoryDao: CategoryDao
+    private lateinit var recipeDao: RecipeDao
+    private lateinit var ioExecutor: ExecutorService
+
+    private var isSaving by mutableStateOf(false)
+    private var nameDialogState by mutableStateOf<NameDialogState?>(null)
+    private var nameDialogInput by mutableStateOf("")
+    private var cannotDeleteDialogVisible by mutableStateOf(false)
+    private var unsavedBackDialogVisible by mutableStateOf(false)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        ComposeSystemBarDelegate.install(this)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (!isSaving) {
+                    requestBackWithUnsavedCheck()
+                }
+            }
+        })
+
+        val app = App.getInstance()
+        categoryDao = app.getDatabase().categoryDao()
+        recipeDao = app.getDatabase().recipeDao()
+        ioExecutor = app.ioExecutor()
+
+        setContent {
+            CategoryManageTheme {
+                CategoryManageScreen(
+                    categories = categories,
+                    isSaving = isSaving,
+                    onBack = { if (!isSaving) requestBackWithUnsavedCheck() },
+                    onSave = { if (!isSaving) saveCategories() },
+                    onMove = { from, to -> moveCategory(from, to) },
+                    onAdd = { showNameDialog("新增分类", null) },
+                    onEdit = { index -> showNameDialog("编辑分类", index) },
+                    onDelete = { index -> tryDeleteCategory(index) }
+                )
+
+                val dialog = nameDialogState
+                if (dialog != null) {
+                    AppTextInputDialog(
+                        onDismissRequest = { dismissNameDialog() },
+                        title = dialog.title,
+                        value = nameDialogInput,
+                        onValueChange = { nameDialogInput = it },
+                        hint = "请输入分类名称",
+                        confirmText = "确定",
+                        dismissText = "取消",
+                        onConfirm = { confirmNameDialog(dialog) },
+                        onDismiss = { dismissNameDialog() }
+                    )
+                }
+
+                if (cannotDeleteDialogVisible) {
+                    AppAlertDialog(
+                        onDismissRequest = { cannotDeleteDialogVisible = false },
+                        title = "无法删除",
+                        message = "该分类下有菜谱，无法删除。",
+                        confirmText = "知道了",
+                        onConfirm = { cannotDeleteDialogVisible = false },
+                        dismissText = null
+                    )
+                }
+
+                if (unsavedBackDialogVisible) {
+                    AppAlertDialog(
+                        onDismissRequest = { unsavedBackDialogVisible = false },
+                        title = "未保存修改",
+                        message = "有未保存的修改，是否先保存再返回？",
+                        confirmText = "保存并返回",
+                        onConfirm = {
+                            unsavedBackDialogVisible = false
+                            saveCategories()
+                        },
+                        dismissText = "直接返回",
+                        onDismiss = {
+                            unsavedBackDialogVisible = false
+                            finish()
+                        }
+                    )
+                }
+            }
+        }
+
+        loadCategories()
+    }
+
+    private fun showNameDialog(title: String, editingIndex: Int?) {
+        val defaultText = if (editingIndex != null && editingIndex in categories.indices) {
+            categories[editingIndex].name
+        } else {
+            ""
+        }
+        nameDialogInput = defaultText
+        nameDialogState = NameDialogState(title = title, editingIndex = editingIndex)
+    }
+
+    private fun dismissNameDialog() {
+        nameDialogState = null
+        nameDialogInput = ""
+    }
+
+    private fun confirmNameDialog(dialog: NameDialogState) {
+        val newName = nameDialogInput.trim()
+        if (newName.isEmpty()) {
+            Toast.makeText(this, "名称不能为空", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val editingIndex = dialog.editingIndex
+        if (editingIndex == null) {
+            categories.add(
+                EditableCategory(
+                    id = null,
+                    name = newName,
+                    uiKey = createTempUiKey()
+                )
+            )
+        } else if (editingIndex in categories.indices) {
+            categories[editingIndex] = categories[editingIndex].copy(name = newName)
+        }
+        dismissNameDialog()
+    }
+
+    private fun loadCategories() {
+        ioExecutor.execute {
+            val list = categoryDao.getAll() ?: emptyList()
+            val loadedIds = list.mapNotNull { it.id }
+            nextTempUiKey = -1L
+            val mapped = list.map { entity ->
+                EditableCategory(
+                    id = entity.id,
+                    name = entity.name,
+                    uiKey = entity.id ?: createTempUiKey()
+                )
+            }
+            runOnUiThread {
+                originalIds.clear()
+                originalIds.addAll(loadedIds)
+                categories.clear()
+                categories.addAll(mapped)
+                baselineState = mapped.map { it.id to it.name }
+            }
+        }
+    }
+
+    private fun moveCategory(from: Int, to: Int) {
+        if (from !in categories.indices || to !in categories.indices || from == to) return
+        val item = categories.removeAt(from)
+        categories.add(to, item)
+    }
+
+    private fun tryDeleteCategory(index: Int) {
+        if (index !in categories.indices) return
+        val target = categories[index]
+        val targetUiKey = target.uiKey
+        val categoryId = target.id
+        if (categoryId == null) {
+            categories.removeAt(index)
+            return
+        }
+        ioExecutor.execute {
+            val count = recipeDao.countByCategoryId(categoryId)
+            runOnUiThread {
+                if (count > 0) {
+                    cannotDeleteDialogVisible = true
+                    return@runOnUiThread
+                }
+                val removeIndex = categories.indexOfFirst { it.uiKey == targetUiKey }
+                if (removeIndex >= 0) {
+                    categories.removeAt(removeIndex)
+                }
+            }
+        }
+    }
+
+    private fun saveCategories() {
+        if (categories.isEmpty()) {
+            Toast.makeText(this, "暂无可保存的分类", Toast.LENGTH_SHORT).show()
+            return
+        }
+        isSaving = true
+        val snapshot = categories.toList()
+        ioExecutor.execute {
+            try {
+                val currentIds = snapshot.mapNotNull { it.id }
+                val toDelete = originalIds.filter { id -> !currentIds.contains(id) }
+                if (toDelete.isNotEmpty()) {
+                    categoryDao.deleteByIds(toDelete)
+                }
+
+                val entities = snapshot.mapIndexed { index, item ->
+                    CategoryEntity(item.id, item.name, index + 1)
+                }
+                categoryDao.insertAll(entities)
+
+                runOnUiThread {
+                    isSaving = false
+                    App.getInstance().requestAutoWebDavUploadIfConfigured()
+                    Toast.makeText(this, "分类已保存", Toast.LENGTH_SHORT).show()
+                    baselineState = snapshot.map { it.id to it.name }
+                    setResult(RESULT_OK)
+                    finish()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    isSaving = false
+                    Toast.makeText(this, "保存失败: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun createTempUiKey(): Long {
+        val key = nextTempUiKey
+        nextTempUiKey -= 1L
+        return key
+    }
+
+    private fun requestBackWithUnsavedCheck() {
+        if (isSaving) return
+        if (hasUnsavedChanges()) {
+            unsavedBackDialogVisible = true
+        } else {
+            finish()
+        }
+    }
+
+    private fun hasUnsavedChanges(): Boolean {
+        val currentState = categories.map { it.id to it.name }
+        return currentState != baselineState
+    }
+}
+
+@Composable
+private fun CategoryManageTheme(content: @Composable () -> Unit) {
+    val scheme = lightColorScheme(
+        primary = Color(0xFFFEF1A5),
+        onPrimary = Color(0xFF2C2518),
+        secondary = Color(0xFF4A3F2B),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFF2EAD6),
+        onSecondaryContainer = Color(0xFF2C2518),
+        surface = Color(0xFFFFFCF3),
+        surfaceVariant = Color(0xFFF7F2E6),
+        onSurface = Color(0xFF2B2822),
+        onSurfaceVariant = Color(0xFF5A5448),
+        outline = Color(0xFFD8CFBA)
+    )
+    MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, content = content)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryManageScreen(
+    categories: List<EditableCategory>,
+    isSaving: Boolean,
+    onBack: () -> Unit,
+    onSave: () -> Unit,
+    onMove: (Int, Int) -> Unit,
+    onAdd: () -> Unit,
+    onEdit: (Int) -> Unit,
+    onDelete: (Int) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFFFFF8E8), Color(0xFFFFFDF7))
+                )
+            )
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("菜谱分类", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = "拖动排序，编辑后点右上角保存",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack, enabled = !isSaving) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_back_gold),
+                                contentDescription = "返回",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onSave, enabled = !isSaving) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_save_gold),
+                                contentDescription = "保存",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
+            }
+        ) { paddingValues ->
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                CategoryList(
+                    categories = categories,
+                    onMove = onMove,
+                    onAdd = onAdd,
+                    onEdit = onEdit,
+                    onDelete = onDelete
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryList(
+    categories: List<EditableCategory>,
+    onMove: (Int, Int) -> Unit,
+    onAdd: () -> Unit,
+    onEdit: (Int) -> Unit,
+    onDelete: (Int) -> Unit
+) {
+    var draggingItemUiKey by remember { mutableStateOf<Long?>(null) }
+    var draggedOffsetY by remember { mutableFloatStateOf(0f) }
+    val swapThresholdPx = with(androidx.compose.ui.platform.LocalDensity.current) { 36.dp.toPx() }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp)
+    ) {
+        itemsIndexed(
+            items = categories,
+            key = { _, item -> item.uiKey }
+        ) { index, category ->
+            val isDragging = draggingItemUiKey == category.uiKey
+            CategoryItemRow(
+                category = category,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .then(
+                        if (isDragging) {
+                            Modifier
+                                .zIndex(1f)
+                                .offset { IntOffset(0, draggedOffsetY.roundToInt()) }
+                        } else {
+                            Modifier
+                        }
+                    ),
+                onEdit = { onEdit(index) },
+                onDelete = { onDelete(index) },
+                dragHandleModifier = Modifier.pointerInput(category.uiKey) {
+                    detectDragGestures(
+                        onDragStart = {
+                            draggingItemUiKey = category.uiKey
+                            draggedOffsetY = 0f
+                        },
+                        onDragEnd = {
+                            draggingItemUiKey = null
+                            draggedOffsetY = 0f
+                        },
+                        onDragCancel = {
+                            draggingItemUiKey = null
+                            draggedOffsetY = 0f
+                        },
+                        onDrag = { _, dragAmount ->
+                            val activeKey = draggingItemUiKey ?: return@detectDragGestures
+                            val currentIndex = categories.indexOfFirst { it.uiKey == activeKey }
+                            if (currentIndex == -1) return@detectDragGestures
+                            draggedOffsetY += dragAmount.y
+                            if (draggedOffsetY > swapThresholdPx && currentIndex < categories.lastIndex) {
+                                onMove(currentIndex, currentIndex + 1)
+                                draggedOffsetY -= swapThresholdPx
+                            } else if (draggedOffsetY < -swapThresholdPx && currentIndex > 0) {
+                                onMove(currentIndex, currentIndex - 1)
+                                draggedOffsetY += swapThresholdPx
+                            }
+                        }
+                    )
+                }
+            )
+        }
+
+        item(key = "add-row") {
+            AddCategoryRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                onAdd = onAdd
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryItemRow(
+    category: EditableCategory,
+    modifier: Modifier = Modifier,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    dragHandleModifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .height(56.dp)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = category.name,
+            modifier = Modifier.weight(1f),
+            color = Color(0xFF111827),
+            fontSize = 16.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_edit_gold),
+                contentDescription = "编辑",
+                tint = MaterialTheme.colorScheme.secondary
+            )
+        }
+        IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_delete_gold),
+                contentDescription = "删除",
+                tint = MaterialTheme.colorScheme.secondary
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .then(dragHandleModifier),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_sort_gold),
+                contentDescription = "拖动排序",
+                tint = MaterialTheme.colorScheme.secondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddCategoryRow(
+    modifier: Modifier = Modifier,
+    onAdd: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .height(56.dp)
+            .padding(horizontal = 12.dp)
+            .clickable(onClick = onAdd),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_add_gold),
+            contentDescription = "新增分类",
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = "新增分类",
+            color = MaterialTheme.colorScheme.secondary,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
+}

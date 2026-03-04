@@ -4,11 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+    app:cardBackgroundColor="#FFFCF3"
     app:cardCornerRadius="16dp"
-    app:cardElevation="1dp"
+    app:cardElevation="0dp"
     app:strokeWidth="1dp"
-    app:strokeColor="?attr/colorOutline">
+    app:strokeColor="#D8CFBA">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -25,7 +25,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="start|center_vertical"
-                android:textColor="#111827"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
@@ -47,10 +47,14 @@
             android:minHeight="64dp"
             android:minLines="3"
             android:hint="请输入步骤文字（可选）"
-            android:background="@android:color/transparent"
-            android:textColor="#111827"
+            android:background="@drawable/bg_step_text_field"
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
             android:textSize="15sp"
-            android:padding="8dp"
+            android:paddingStart="12dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="10dp"
             android:gravity="top|start"
             android:inputType="textMultiLine" />
 
@@ -79,6 +83,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/add_images"
+                app:strokeColor="#D8CFBA"
                 style="@style/Widget.DogCuisine.Button.Outlined" />
 
             <Space

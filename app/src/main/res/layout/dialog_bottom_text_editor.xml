@@ -24,7 +24,7 @@
         android:layout_marginTop="12dp"
         android:minHeight="64dp"
         android:minLines="3"
-        android:maxHeight="200dp"
+        android:maxHeight="250dp"
         android:overScrollMode="always"
         android:scrollbars="vertical"
         android:fadeScrollbars="false"
