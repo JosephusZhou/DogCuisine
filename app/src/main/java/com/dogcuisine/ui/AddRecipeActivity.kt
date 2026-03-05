@@ -12,6 +12,7 @@ import android.graphics.drawable.ColorDrawable
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +27,7 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.AttrRes
 import androidx.annotation.NonNull
 import androidx.annotation.Nullable
 import androidx.appcompat.app.AppCompatActivity
@@ -46,6 +48,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -84,7 +87,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -1226,7 +1231,8 @@ private fun ImageStrip(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(scrollState),
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         imagePaths.forEach { path ->
@@ -1245,35 +1251,73 @@ private fun ImageTile(
     onImageClick: () -> Unit,
     onImageDelete: () -> Unit
 ) {
+    val containerSize = 70.dp
+    val imageSize = 60.dp
+    val imageMargin = 5.dp
+    val closeBg = themeAttrColor(
+        attr = com.google.android.material.R.attr.colorSecondaryContainer,
+        fallback = MaterialTheme.colorScheme.secondaryContainer
+    )
+    val closeTint = themeAttrColor(
+        attr = com.google.android.material.R.attr.colorOnSecondaryContainer,
+        fallback = MaterialTheme.colorScheme.onSecondaryContainer
+    )
     Box(
         modifier = Modifier
-            .size(76.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .size(containerSize)
     ) {
-        LocalImage(
-            imagePath = path,
-            contentScale = ContentScale.Crop,
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(end = 8.dp, top = 8.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = imageMargin, y = -imageMargin)
+                .requiredSize(imageSize)
+                .clip(RoundedCornerShape(4.dp))
                 .clickable(onClick = onImageClick)
-        )
-        IconButton(
-            onClick = onImageDelete,
+        ) {
+            LocalImage(
+                imagePath = path,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Box(
             modifier = Modifier
                 .size(24.dp)
                 .align(Alignment.TopEnd)
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = CircleShape
-                )
+                .clip(CircleShape)
+                .background(closeBg)
+                .clickable(onClick = onImageDelete),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_close_gold),
                 contentDescription = "删除图片",
-                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                tint = closeTint,
+                modifier = Modifier.size(18.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun themeAttrColor(
+    @AttrRes attr: Int,
+    fallback: ComposeColor
+): ComposeColor {
+    val context = LocalContext.current
+    return remember(context, attr, fallback) {
+        val typedValue = TypedValue()
+        val resolved = context.theme.resolveAttribute(attr, typedValue, true)
+        val colorInt = if (resolved) {
+            if (typedValue.resourceId != 0) {
+                ContextCompat.getColor(context, typedValue.resourceId)
+            } else {
+                typedValue.data
+            }
+        } else {
+            fallback.toArgb()
+        }
+        ComposeColor(colorInt)
     }
 }
 

@@ -4,10 +4,12 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.net.Uri;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.util.TypedValue;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -120,11 +122,11 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             String path = images.get(i);
 
             Context context = holder.itemView.getContext();
-            int containerSize = 200;
-            int imageSize = Math.round(containerSize * 0.85f);
-            int closeSize = 48;
-            int imageMargin = 8;
-            int containerMargin = 8;
+            int containerSize = dp(context, 70f);
+            int imageSize = dp(context, 60f);
+            int closeSize = dp(context, 24f);
+            int imageMargin = dp(context, 5f);
+            int containerMargin = dp(context, 4f);
 
             FrameLayout container = new FrameLayout(context);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(containerSize, containerSize);
@@ -143,10 +145,17 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(closeSize, closeSize);
             closeLp.gravity = Gravity.END | Gravity.TOP;
             close.setLayoutParams(closeLp);
-            close.setBackgroundResource(R.drawable.bg_icon_button_filled);
+            int bgColor = MaterialColors.getColor(close, com.google.android.material.R.attr.colorSecondaryContainer);
+            GradientDrawable closeBg = new GradientDrawable();
+            closeBg.setShape(GradientDrawable.OVAL);
+            closeBg.setColor(bgColor);
+            close.setBackground(closeBg);
             close.setImageResource(R.drawable.ic_close_gold);
             close.setScaleType(ImageView.ScaleType.CENTER);
-            int tint = MaterialColors.getColor(close, com.google.android.material.R.attr.colorOnSecondary);
+            close.setPadding(0, 0, 0, 0);
+            close.setMinimumWidth(0);
+            close.setMinimumHeight(0);
+            int tint = MaterialColors.getColor(close, com.google.android.material.R.attr.colorOnSecondaryContainer);
             close.setImageTintList(ColorStateList.valueOf(tint));
             close.setContentDescription("删除图片");
             close.setOnClickListener(v -> removeImage(item, path, holder.getBindingAdapterPosition()));
@@ -207,6 +216,14 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
 
     public void setDragStartListener(DragStartListener listener) {
         this.dragStartListener = listener;
+    }
+
+    private int dp(@NonNull Context context, float value) {
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                value,
+                context.getResources().getDisplayMetrics()
+        ));
     }
 
     static class StepViewHolder extends RecyclerView.ViewHolder {
