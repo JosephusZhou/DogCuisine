@@ -2,7 +2,6 @@ package com.dogcuisine.ui
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -15,7 +14,6 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
@@ -28,14 +26,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.AttrRes
-import androidx.annotation.NonNull
 import androidx.annotation.Nullable
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,8 +51,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -86,21 +86,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.dogcuisine.App
 import com.dogcuisine.R
 import com.dogcuisine.data.CategoryDao
@@ -113,17 +112,19 @@ import com.dogcuisine.data.UserProfileDao
 import com.dogcuisine.data.UserProfileEntity
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
 import java.util.concurrent.ExecutorService
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import android.app.Dialog as AndroidDialog
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 class AddRecipeActivity : AppCompatActivity() {
 
@@ -149,10 +150,9 @@ class AddRecipeActivity : AppCompatActivity() {
     private var ingredientText by mutableStateOf("")
     private val ingredientImages = mutableStateListOf<String>()
     private val steps = mutableStateListOf<StepItem>()
+    private val stepStableKeys = mutableStateListOf<Long>()
+    private var nextStepStableKey = 0L
     private val categoryOptions = mutableStateListOf<CategoryEntity>()
-    private lateinit var stepAdapter: StepAdapter
-    private lateinit var stepTouchHelper: ItemTouchHelper
-    private var boundStepRecyclerView: RecyclerView? = null
 
     private var previewImagePath by mutableStateOf<String?>(null)
     private var scrollToBottomToken by mutableIntStateOf(0)
@@ -180,8 +180,8 @@ class AddRecipeActivity : AppCompatActivity() {
 
         if (steps.isEmpty()) {
             steps.add(StepItem())
+            stepStableKeys.add(obtainNextStepStableKey())
         }
-        setupStepListAdapter()
 
         editingId = intent.getLongExtra(EXTRA_RECIPE_ID, -1L)
         if (editingId > 0L) {
@@ -199,6 +199,8 @@ class AddRecipeActivity : AppCompatActivity() {
                     categoryOptions = categoryOptions,
                     ingredientText = ingredientText,
                     ingredientImages = ingredientImages,
+                    steps = steps,
+                    stepKeys = stepStableKeys,
                     scrollToBottomToken = scrollToBottomToken,
                     onBack = { finish() },
                     onSave = { saveRecipe() },
@@ -214,8 +216,31 @@ class AddRecipeActivity : AppCompatActivity() {
                     onIngredientImageClick = { path -> previewImagePath = path },
                     onIngredientImageDelete = { path -> removeIngredientImage(path) },
                     onAddStep = { addStep() },
-                    onBindStepRecyclerView = { recyclerView ->
-                        bindStepRecyclerView(recyclerView)
+                    onStepTextClick = { index, currentText ->
+                        if (index in steps.indices) {
+                            showBottomTextEditor("编辑步骤", currentText) { text ->
+                                updateStepText(index, text)
+                            }
+                        }
+                    },
+                    onAddStepImages = { index ->
+                        if (index in steps.indices) {
+                            pendingStepIndex = index
+                            stepImagesPicker.launch(arrayOf("image/*"))
+                        }
+                    },
+                    onDeleteStep = { index ->
+                        if (index in steps.indices) {
+                            steps.removeAt(index)
+                            stepStableKeys.removeAt(index)
+                        }
+                    },
+                    onMoveStep = { fromIndex, toIndex ->
+                        moveStep(fromIndex, toIndex)
+                    },
+                    onStepImageClick = { path -> previewImagePath = path },
+                    onStepImageDelete = { index, path ->
+                        removeStepImage(index, path)
                     }
                 )
 
@@ -227,89 +252,6 @@ class AddRecipeActivity : AppCompatActivity() {
                     )
                 }
             }
-        }
-    }
-
-    private fun setupStepListAdapter() {
-        stepAdapter = StepAdapter(
-            steps,
-            StepAdapter.StepImageAddListener { position ->
-                if (position !in steps.indices) return@StepImageAddListener
-                pendingStepIndex = position
-                stepImagesPicker.launch(arrayOf("image/*"))
-            },
-            StepAdapter.StepDeleteListener { position ->
-                if (position !in steps.indices) return@StepDeleteListener
-                steps.removeAt(position)
-                stepAdapter.notifyItemRemoved(position)
-                stepAdapter.notifyItemRangeChanged(position, (steps.size - position).coerceAtLeast(0))
-            },
-            StepAdapter.StepTextClickListener { position, currentText ->
-                if (position !in steps.indices) return@StepTextClickListener
-                showBottomTextEditor("编辑步骤", currentText) { text ->
-                    updateStepText(position, text)
-                }
-            }
-        )
-        stepTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            0
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean {
-                val from = viewHolder.bindingAdapterPosition
-                val to = target.bindingAdapterPosition
-                if (from != RecyclerView.NO_POSITION && to != RecyclerView.NO_POSITION) {
-                    stepAdapter.moveItem(from, to)
-                }
-                return true
-            }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                // No-op, swipe delete is not supported.
-            }
-
-            override fun isLongPressDragEnabled(): Boolean = false
-
-            override fun getMoveThreshold(viewHolder: RecyclerView.ViewHolder): Float = 0.33f
-
-            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
-                super.onSelectedChanged(viewHolder, actionState)
-                viewHolder?.itemView?.let { itemView ->
-                    ViewCompat.setElevation(itemView, 0f)
-                    ViewCompat.setTranslationZ(itemView, 0f)
-                }
-            }
-
-            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                super.clearView(recyclerView, viewHolder)
-                ViewCompat.setElevation(viewHolder.itemView, 0f)
-                ViewCompat.setTranslationZ(viewHolder.itemView, 0f)
-            }
-        })
-        stepAdapter.setDragStartListener { viewHolder ->
-            stepTouchHelper.startDrag(viewHolder)
-        }
-    }
-
-    private fun bindStepRecyclerView(recyclerView: RecyclerView) {
-        if (recyclerView.layoutManager == null) {
-            recyclerView.layoutManager = LinearLayoutManager(this)
-        }
-        recyclerView.isNestedScrollingEnabled = false
-        recyclerView.overScrollMode = View.OVER_SCROLL_NEVER
-        if (recyclerView.itemAnimator != null) {
-            recyclerView.itemAnimator = null
-        }
-        if (recyclerView.adapter !== stepAdapter) {
-            recyclerView.adapter = stepAdapter
-        }
-        if (boundStepRecyclerView !== recyclerView) {
-            stepTouchHelper.attachToRecyclerView(recyclerView)
-            boundStepRecyclerView = recyclerView
         }
     }
 
@@ -344,8 +286,10 @@ class AddRecipeActivity : AppCompatActivity() {
                     copyAndCompressImage(uri, "step$stepIndex")
                 }
                 if (copiedPaths.isEmpty()) return@registerForActivityResult
-                steps[stepIndex].addImagePaths(copiedPaths)
-                stepAdapter.notifyItemChanged(stepIndex)
+                val current = steps[stepIndex]
+                val mergedPaths = ArrayList(current.imagePaths ?: emptyList())
+                mergedPaths.addAll(copiedPaths)
+                steps[stepIndex] = StepItem(current.text, mergedPaths)
             }
 
         ingredientImagesPicker =
@@ -370,16 +314,40 @@ class AddRecipeActivity : AppCompatActivity() {
         coverCropLauncher.launch(intent)
     }
 
+    private fun obtainNextStepStableKey(): Long {
+        val key = nextStepStableKey
+        nextStepStableKey += 1
+        return key
+    }
+
     private fun addStep() {
         steps.add(StepItem())
-        stepAdapter.notifyItemInserted(steps.lastIndex)
+        stepStableKeys.add(obtainNextStepStableKey())
         scrollToBottomToken += 1
     }
 
     private fun updateStepText(index: Int, text: String) {
         if (index !in steps.indices) return
-        steps[index].text = text
-        stepAdapter.notifyItemChanged(index)
+        val current = steps[index]
+        steps[index] = StepItem(text, ArrayList(current.imagePaths ?: emptyList()))
+    }
+
+    private fun removeStepImage(index: Int, path: String) {
+        if (index !in steps.indices) return
+        val current = steps[index]
+        val updatedPaths = ArrayList(current.imagePaths ?: emptyList())
+        val removed = updatedPaths.remove(path)
+        if (!removed) return
+        steps[index] = StepItem(current.text, updatedPaths)
+    }
+
+    private fun moveStep(fromIndex: Int, toIndex: Int) {
+        if (fromIndex == toIndex) return
+        if (fromIndex !in steps.indices || toIndex !in steps.indices) return
+        val moved = steps.removeAt(fromIndex)
+        steps.add(toIndex, moved)
+        val movedKey = stepStableKeys.removeAt(fromIndex)
+        stepStableKeys.add(toIndex, movedKey)
     }
 
     private fun removeIngredientImage(path: String) {
@@ -530,14 +498,16 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun resetSteps(items: List<StepItem>) {
         steps.clear()
+        stepStableKeys.clear()
         if (items.isEmpty()) {
             steps.add(StepItem())
+            stepStableKeys.add(obtainNextStepStableKey())
         } else {
             items.forEach { item ->
                 steps.add(StepItem(item.text, ArrayList(item.imagePaths ?: emptyList())))
+                stepStableKeys.add(obtainNextStepStableKey())
             }
         }
-        stepAdapter.notifyDataSetChanged()
     }
 
     private fun loadCategoriesForDropdown() {
@@ -860,7 +830,7 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun AddRecipeScreen(
     title: String,
@@ -870,6 +840,8 @@ private fun AddRecipeScreen(
     categoryOptions: List<CategoryEntity>,
     ingredientText: String,
     ingredientImages: List<String>,
+    steps: List<StepItem>,
+    stepKeys: List<Long>,
     scrollToBottomToken: Int,
     onBack: () -> Unit,
     onSave: () -> Unit,
@@ -881,9 +853,23 @@ private fun AddRecipeScreen(
     onIngredientImageClick: (String) -> Unit,
     onIngredientImageDelete: (String) -> Unit,
     onAddStep: () -> Unit,
-    onBindStepRecyclerView: (RecyclerView) -> Unit
+    onStepTextClick: (Int, String) -> Unit,
+    onAddStepImages: (Int) -> Unit,
+    onDeleteStep: (Int) -> Unit,
+    onMoveStep: (Int, Int) -> Unit,
+    onStepImageClick: (String) -> Unit,
+    onStepImageDelete: (Int, String) -> Unit
 ) {
     val listState = rememberLazyListState()
+    val reorderableLazyListState = rememberReorderableLazyListState(listState) { from, to ->
+        val fromKey = from.key as? Long
+        val toKey = to.key as? Long
+        val fromStepIndex = if (fromKey == null) -1 else stepKeys.indexOf(fromKey)
+        val toStepIndex = if (toKey == null) -1 else stepKeys.indexOf(toKey)
+        if (fromStepIndex >= 0 && toStepIndex >= 0 && fromStepIndex != toStepIndex) {
+            onMoveStep(fromStepIndex, toStepIndex)
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -994,10 +980,27 @@ private fun AddRecipeScreen(
                 item(key = "steps-title") {
                     SectionTitle(text = "步骤")
                 }
-                item(key = "step-list") {
-                    StepRecyclerList(
-                        onBindStepRecyclerView = onBindStepRecyclerView
-                    )
+                itemsIndexed(
+                    items = steps,
+                    key = { index, _ -> stepKeys.getOrElse(index) { index.toLong() } }
+                ) { index, step ->
+                    val stepItemKey = stepKeys.getOrElse(index) { index.toLong() }
+                    ReorderableItem(
+                        state = reorderableLazyListState,
+                        key = stepItemKey
+                    ) { isDragging ->
+                        StepCard(
+                            index = index,
+                            step = step,
+                            isDragging = isDragging,
+                            onTextClick = { onStepTextClick(index, step.text.orEmpty()) },
+                            onAddImages = { onAddStepImages(index) },
+                            onImageClick = onStepImageClick,
+                            onImageDelete = { path -> onStepImageDelete(index, path) },
+                            onDeleteStep = { onDeleteStep(index) },
+                            dragHandleModifier = with(this) { Modifier.longPressDraggableHandle() }
+                        )
+                    }
                 }
                 item(key = "tail-spacing") {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -1153,23 +1156,111 @@ private fun IngredientCard(
 }
 
 @Composable
-private fun StepRecyclerList(
-    onBindStepRecyclerView: (RecyclerView) -> Unit
+private fun StepCard(
+    index: Int,
+    step: StepItem,
+    isDragging: Boolean,
+    onTextClick: () -> Unit,
+    onAddImages: () -> Unit,
+    onImageClick: (String) -> Unit,
+    onImageDelete: (String) -> Unit,
+    onDeleteStep: () -> Unit,
+    dragHandleModifier: Modifier = Modifier
 ) {
-    AndroidView(
+    val elevation by animateDpAsState(
+        targetValue = if (isDragging) 2.dp else 0.dp,
+        label = "step_drag_elevation"
+    )
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        factory = { context ->
-            RecyclerView(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = ComposeColor(0xFFFFFCF3)),
+        border = BorderStroke(1.dp, ComposeColor(0xFFD8CFBA)),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "步骤 ${index + 1}",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_sort_gold),
+                    contentDescription = "拖动排序",
+                    modifier = dragHandleModifier
+                        .padding(4.dp)
+                        .size(24.dp),
+                    tint = ComposeColor.Unspecified
                 )
             }
-        },
-        update = { recyclerView ->
-            onBindStepRecyclerView(recyclerView)
+            Spacer(modifier = Modifier.height(8.dp))
+            StepTextProxyField(
+                text = step.text.orEmpty(),
+                onClick = onTextClick
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            ImageStrip(
+                imagePaths = step.imagePaths ?: emptyList(),
+                onImageClick = onImageClick,
+                onImageDelete = onImageDelete
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = onAddImages,
+                    modifier = Modifier.weight(1f),
+                    border = BorderStroke(1.dp, ComposeColor(0xFFD8CFBA))
+                ) {
+                    Text(
+                        text = "添加图片",
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedButton(
+                    onClick = onDeleteStep,
+                    modifier = Modifier.weight(1f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                ) {
+                    Text(
+                        text = "删除步骤",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         }
-    )
+    }
+}
+
+@Composable
+private fun StepTextProxyField(
+    text: String,
+    onClick: () -> Unit
+) {
+    val hasText = text.isNotBlank()
+    val alpha by animateFloatAsState(targetValue = if (hasText) 1f else 0.78f, label = "step_text_alpha")
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(ComposeColor(0xFFF7F2E6))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        contentAlignment = Alignment.TopStart
+    ) {
+        Text(
+            text = if (hasText) text else "请输入步骤文字（可选）",
+            color = if (hasText) DogCuisineColors.TextPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.graphicsLayer(alpha = alpha)
+        )
+    }
 }
 
 @Composable
@@ -1204,15 +1295,16 @@ private fun ImageStrip(
     onImageClick: (String) -> Unit,
     onImageDelete: (String) -> Unit
 ) {
-    val scrollState = rememberScrollState()
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(scrollState)
             .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        imagePaths.forEach { path ->
+        items(
+            items = imagePaths,
+            key = { it }
+        ) { path ->
             ImageTile(
                 path = path,
                 onImageClick = { onImageClick(path) },
@@ -1228,9 +1320,22 @@ private fun ImageTile(
     onImageClick: () -> Unit,
     onImageDelete: () -> Unit
 ) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
     val containerSize = 70.dp
     val imageSize = 60.dp
     val imageMargin = 5.dp
+    val imageSizePx = with(density) { imageSize.roundToPx() }
+    val imageRequest = remember(path, imageSizePx) {
+        ImageRequest.Builder(context)
+            .data(File(path))
+            .size(imageSizePx, imageSizePx)
+            .crossfade(true)
+            .build()
+    }
+    val placeholderPainter = remember {
+        ColorPainter(ComposeColor(0xFFE0E0E0))
+    }
     val closeBg = themeAttrColor(
         attr = com.google.android.material.R.attr.colorSecondaryContainer,
         fallback = MaterialTheme.colorScheme.secondaryContainer
@@ -1250,10 +1355,14 @@ private fun ImageTile(
                 .requiredSize(imageSize)
                 .clip(RoundedCornerShape(4.dp))
                 .clickable(onClick = onImageClick)
+                .background(ComposeColor(0xFFE0E0E0))
         ) {
-            LocalImage(
-                imagePath = path,
+            AsyncImage(
+                model = imageRequest,
+                contentDescription = null,
                 contentScale = ContentScale.Crop,
+                placeholder = placeholderPainter,
+                error = placeholderPainter,
                 modifier = Modifier.fillMaxSize()
             )
         }
