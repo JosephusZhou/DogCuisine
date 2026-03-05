@@ -1,9 +1,7 @@
 package com.dogcuisine.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -49,6 +47,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -57,10 +56,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.dogcuisine.App
@@ -71,6 +71,8 @@ import com.dogcuisine.data.RecipeEntity
 import com.dogcuisine.data.StepItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.File
 import java.lang.reflect.Type
 import java.text.SimpleDateFormat
@@ -597,31 +599,25 @@ private fun RecipeThumbnail(
     imagePath: String?,
     modifier: Modifier = Modifier
 ) {
-    AndroidView(
-        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
-        factory = { context ->
-            ImageView(context).apply {
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setImageResource(R.drawable.ic_launcher_foreground)
-            }
-        },
-        update = { imageView ->
-            val path = imagePath
-            if (path.isNullOrEmpty()) {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                return@AndroidView
-            }
-            val file = File(path)
-            if (!file.exists()) {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                return@AndroidView
-            }
-            runCatching {
-                imageView.setImageURI(Uri.fromFile(file))
-            }.onFailure {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-            }
-        }
+    val context = LocalContext.current
+    val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
+    val model = remember(imagePath) {
+        imagePath
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::File)
+            ?.takeIf { it.exists() }
+    }
+    AsyncImage(
+        model = ImageRequest.Builder(context)
+            .data(model)
+            .crossfade(true)
+            .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant)
     )
 }
 

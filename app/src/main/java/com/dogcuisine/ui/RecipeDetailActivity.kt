@@ -1,9 +1,7 @@
 package com.dogcuisine.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -33,6 +31,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -41,10 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import com.dogcuisine.App
 import com.dogcuisine.R
@@ -54,6 +54,8 @@ import com.dogcuisine.data.RecipeEntity
 import com.dogcuisine.data.StepItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.File
 import java.lang.reflect.Type
 import java.util.concurrent.ExecutorService
@@ -347,36 +349,30 @@ private fun LocalSquareCover(
     imagePath: String?,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
+    val model = remember(imagePath) {
+        imagePath
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::File)
+            ?.takeIf { it.exists() }
+    }
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        AndroidView(
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(model)
+                .crossfade(true)
+                .build(),
             modifier = Modifier.fillMaxSize(),
-            factory = { context ->
-                ImageView(context).apply {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    setImageResource(R.drawable.ic_launcher_foreground)
-                }
-            },
-            update = { imageView ->
-                val path = imagePath
-                if (path.isNullOrEmpty()) {
-                    imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                    return@AndroidView
-                }
-                val file = File(path)
-                if (!file.exists()) {
-                    imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                    return@AndroidView
-                }
-                runCatching {
-                    imageView.setImageURI(Uri.fromFile(file))
-                }.onFailure {
-                    imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                }
-            }
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            placeholder = fallbackPainter,
+            error = fallbackPainter,
+            fallback = fallbackPainter
         )
     }
 }
@@ -481,26 +477,20 @@ private fun FullWidthRatioImage(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    AndroidView(
-        modifier = modifier.clickable(onClick = onClick),
-        factory = { context ->
-            ImageView(context).apply {
-                adjustViewBounds = true
-                scaleType = ImageView.ScaleType.FIT_CENTER
-            }
-        },
-        update = { imageView ->
-            val file = File(imagePath)
-            if (!file.exists()) {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                return@AndroidView
-            }
-            runCatching {
-                imageView.setImageURI(Uri.fromFile(file))
-            }.onFailure {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-            }
-        }
+    val context = LocalContext.current
+    val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
+    val model = remember(imagePath) { File(imagePath).takeIf { it.exists() } }
+    AsyncImage(
+        model = ImageRequest.Builder(context)
+            .data(model)
+            .crossfade(true)
+            .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+        modifier = modifier.clickable(onClick = onClick)
     )
 }
 
@@ -509,6 +499,9 @@ private fun ImagePreviewDialog(
     path: String,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
+    val model = remember(path) { File(path).takeIf { it.exists() } }
     Dialog(onDismissRequest = onDismiss) {
         Box(
             modifier = Modifier
@@ -517,28 +510,19 @@ private fun ImagePreviewDialog(
                 .clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center
         ) {
-            AndroidView(
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(model)
+                    .crossfade(true)
+                    .build(),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(20.dp),
-                factory = { context ->
-                    ImageView(context).apply {
-                        scaleType = ImageView.ScaleType.FIT_CENTER
-                        setOnClickListener { onDismiss() }
-                    }
-                },
-                update = { imageView ->
-                    val file = File(path)
-                    if (!file.exists()) {
-                        imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                        return@AndroidView
-                    }
-                    runCatching {
-                        imageView.setImageURI(Uri.fromFile(file))
-                    }.onFailure {
-                        imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                    }
-                }
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                placeholder = fallbackPainter,
+                error = fallbackPainter,
+                fallback = fallbackPainter
             )
         }
     }

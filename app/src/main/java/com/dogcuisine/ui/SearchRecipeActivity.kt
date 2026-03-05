@@ -1,11 +1,9 @@
 package com.dogcuisine.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -49,8 +47,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.focus.FocusRequester
@@ -58,11 +58,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.dogcuisine.App
 import com.dogcuisine.R
 import com.dogcuisine.data.RecipeDao
 import com.dogcuisine.data.RecipeEntity
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -382,31 +383,25 @@ private fun RecipeThumb(
     imagePath: String?,
     modifier: Modifier = Modifier
 ) {
-    AndroidView(
-        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
-        factory = { context ->
-            ImageView(context).apply {
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setImageResource(R.drawable.ic_launcher_foreground)
-            }
-        },
-        update = { imageView ->
-            val path = imagePath
-            if (path.isNullOrEmpty()) {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                return@AndroidView
-            }
-            val file = File(path)
-            if (!file.exists()) {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-                return@AndroidView
-            }
-            runCatching {
-                imageView.setImageURI(Uri.fromFile(file))
-            }.onFailure {
-                imageView.setImageResource(R.drawable.ic_launcher_foreground)
-            }
-        }
+    val context = LocalContext.current
+    val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
+    val model = remember(imagePath) {
+        imagePath
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::File)
+            ?.takeIf { it.exists() }
+    }
+    AsyncImage(
+        model = ImageRequest.Builder(context)
+            .data(model)
+            .crossfade(true)
+            .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        placeholder = fallbackPainter,
+        error = fallbackPainter,
+        fallback = fallbackPainter,
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant)
     )
 }
 

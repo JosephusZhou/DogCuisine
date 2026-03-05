@@ -96,7 +96,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
@@ -1413,25 +1412,20 @@ private fun LocalImage(
     contentScale: ContentScale,
     modifier: Modifier = Modifier
 ) {
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            ImageView(context).apply {
-                scaleType = if (contentScale == ContentScale.Fit) {
-                    ImageView.ScaleType.FIT_CENTER
-                } else {
-                    ImageView.ScaleType.CENTER_CROP
-                }
-            }
-        },
-        update = { view ->
-            view.scaleType = if (contentScale == ContentScale.Fit) {
-                ImageView.ScaleType.FIT_CENTER
-            } else {
-                ImageView.ScaleType.CENTER_CROP
-            }
-            view.setImageURI(Uri.fromFile(File(imagePath)))
-        }
+    val context = LocalContext.current
+    val model = remember(imagePath) { File(imagePath).takeIf { it.exists() } }
+    val placeholderPainter = remember { ColorPainter(ComposeColor(0xFFE0E0E0)) }
+    AsyncImage(
+        model = ImageRequest.Builder(context)
+            .data(model)
+            .crossfade(true)
+            .build(),
+        contentDescription = null,
+        contentScale = contentScale,
+        placeholder = placeholderPainter,
+        error = placeholderPainter,
+        fallback = placeholderPainter,
+        modifier = modifier
     )
 }
 
