@@ -2,21 +2,21 @@
     <!-- Base application theme. -->
     <style name="Theme.DogCuisine" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- 主题色保留现有主辅色 -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorOnPrimary">@color/black</item>
-        <item name="colorPrimaryContainer">@color/purple_200</item>
-        <item name="colorOnPrimaryContainer">@color/black</item>
+        <item name="colorPrimary">@color/dog_primary</item>
+        <item name="colorOnPrimary">@color/dog_on_primary</item>
+        <item name="colorPrimaryContainer">@color/dog_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/dog_on_primary_container</item>
 
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSecondaryContainer">@color/teal_200</item>
-        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorSecondary">@color/dog_secondary</item>
+        <item name="colorOnSecondary">@color/dog_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/dog_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/dog_on_secondary_container</item>
 
-        <item name="colorSurface">@color/white</item>
-        <item name="colorSurfaceVariant">#F5F5F0</item>
-        <item name="colorOnSurface">@color/black</item>
-        <item name="colorOnSurfaceVariant">#4A4A4A</item>
-        <item name="colorOutline">#D4D4D4</item>
+        <item name="colorSurface">@color/dog_surface</item>
+        <item name="colorSurfaceVariant">@color/dog_surface_variant</item>
+        <item name="colorOnSurface">@color/dog_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/dog_on_surface_variant</item>
+        <item name="colorOutline">@color/dog_outline</item>
 
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -30,10 +30,10 @@
     </style>
 
     <style name="Theme.DogCuisine.Splash" parent="Theme.SplashScreen.IconBackground">
-        <item name="windowSplashScreenBackground">@color/purple_500</item>
+        <item name="windowSplashScreenBackground">@color/dog_primary</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_ic_launcher_inset</item>
         <item name="windowSplashScreenAnimationDuration">1000</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/purple_500</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/dog_primary</item>
         <item name="postSplashScreenTheme">@style/Theme.DogCuisine</item>
     </style>
 
@@ -63,6 +63,6 @@
     </style>
 
     <style name="Widget.DogCuisine.BottomSheet.Modal" parent="Widget.Material3.BottomSheet.Modal">
-        <item name="backgroundTint">#FFFDF7</item>
+        <item name="backgroundTint">@color/dog_gradient_bottom</item>
     </style>
 </resources>

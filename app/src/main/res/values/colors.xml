@@ -1,16 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 新配色：主色柔和米黄，辅色暖琥珀 -->
-    <color name="purple_200">#FFF6C8</color> <!-- 主色浅阶，用于夜间/高亮背景 -->
-    <color name="purple_500">#FEF1A5</color> <!-- 主色：柔和米黄 -->
-    <color name="purple_700">#E6D67B</color> <!-- 主色深阶，用于强调/夜间 -->
+    <!-- DogCuisine unified color tokens -->
+    <color name="dog_primary">#FEF1A5</color>
+    <color name="dog_on_primary">#2C2518</color>
+    <color name="dog_primary_container">#FFF6C8</color>
+    <color name="dog_on_primary_container">#2C2518</color>
 
-    <color name="teal_200">#4A3F2B</color> <!-- 辅色：深棕灰，按钮/图标 -->
-    <color name="teal_700">#4A3F2B</color> <!-- 辅色深阶：与主辅色一致保持稳重 -->
-    <color name="launcher_green">#3DDC84</color> <!-- 与 ic_launcher 背景一致 -->
+    <color name="dog_secondary">#4A3F2B</color>
+    <color name="dog_on_secondary">#FFFFFFFF</color>
+    <color name="dog_secondary_container">#F2EAD6</color>
+    <color name="dog_on_secondary_container">#2C2518</color>
+
+    <color name="dog_surface">#FFFCF3</color>
+    <color name="dog_surface_variant">#F7F2E6</color>
+    <color name="dog_on_surface">#2B2822</color>
+    <color name="dog_on_surface_variant">#5A5448</color>
+    <color name="dog_outline">#D8CFBA</color>
+
+    <color name="dog_gradient_top">#FFF8E8</color>
+    <color name="dog_gradient_bottom">#FFFDF7</color>
+
+    <color name="dog_text_primary">#111827</color>
+    <color name="dog_text_placeholder">#9CA3AF</color>
+    <color name="dog_text_muted">#6B7280</color>
+
+    <color name="dog_scrim">#CC000000</color>
+    <color name="dog_crop_surface">#111111</color>
+    <color name="dog_crop_mask">#88000000</color>
 
     <color name="celebrate_accent">#E38B2C</color>
-
-    <color name="black">#FF0F172A</color>
-    <color name="white">#FFFFFFFF</color>
 </resources>

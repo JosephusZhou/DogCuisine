@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -91,7 +90,7 @@ class CropCoverActivity : AppCompatActivity() {
         }
 
         setContent {
-            CropCoverTheme {
+            DogCuisineTheme {
                 CropCoverScreen(
                     cropRect = cropRectUi,
                     onBack = { finish() },
@@ -287,19 +286,6 @@ class CropCoverActivity : AppCompatActivity() {
     }
 }
 
-@Composable
-private fun CropCoverTheme(content: @Composable () -> Unit) {
-    val scheme = lightColorScheme(
-        primary = ComposeColor(0xFFFEF1A5),
-        onPrimary = ComposeColor(0xFF2C2518),
-        secondary = ComposeColor(0xFF4A3F2B),
-        onSecondary = ComposeColor.White,
-        surface = ComposeColor(0xFF111111),
-        onSurface = ComposeColor.White
-    )
-    MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, content = content)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CropCoverScreen(
@@ -311,7 +297,7 @@ private fun CropCoverScreen(
     imageContent: @Composable () -> Unit
 ) {
     Scaffold(
-        containerColor = ComposeColor(0xFF111111),
+        containerColor = DogCuisineColors.CropSurface,
         topBar = {
             TopAppBar(
                 title = { Text(text = "裁剪封面", fontWeight = FontWeight.SemiBold) },
@@ -344,7 +330,7 @@ private fun CropCoverScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(ComposeColor(0xFF111111))
+                .background(DogCuisineColors.CropSurface)
                 .onSizeChanged { size ->
                     onViewportSizeChanged(size.width, size.height)
                 }
@@ -370,8 +356,8 @@ private fun Modifier.detectCropGestures(
 
 @Composable
 private fun CropMaskOverlay(cropRect: Rect) {
+    val mask = DogCuisineColors.CropMask
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val mask = ComposeColor(0x88000000)
         drawRect(
             color = mask,
             topLeft = Offset(0f, 0f),

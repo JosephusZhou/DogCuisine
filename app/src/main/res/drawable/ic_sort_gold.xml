@@ -4,11 +4,11 @@
     android:height="24dp"
     android:viewportWidth="960"
     android:viewportHeight="960"
-    android:tint="@color/teal_200">
+    android:tint="@color/dog_secondary">
 
     <group android:translateY="960">
         <path
-            android:fillColor="@color/teal_200"
+            android:fillColor="@color/dog_secondary"
             android:pathData="M120-240v-80h240v80H120Zm0-200v-80h480v80H120Zm0-200v-80h720v80H120Z" />
     </group>
 </vector>

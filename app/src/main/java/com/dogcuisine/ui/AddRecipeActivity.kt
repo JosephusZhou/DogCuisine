@@ -72,7 +72,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -191,7 +190,7 @@ class AddRecipeActivity : AppCompatActivity() {
         loadCategoriesForDropdown()
 
         setContent {
-            AddRecipeTheme {
+            DogCuisineTheme {
                 AddRecipeScreen(
                     title = if (editingId > 0L) "编辑菜谱" else getString(R.string.add_recipe_title),
                     recipeName = recipeName,
@@ -861,24 +860,6 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 }
 
-@Composable
-private fun AddRecipeTheme(content: @Composable () -> Unit) {
-    val scheme = lightColorScheme(
-        primary = ComposeColor(0xFFFEF1A5),
-        onPrimary = ComposeColor(0xFF2C2518),
-        secondary = ComposeColor(0xFF4A3F2B),
-        onSecondary = ComposeColor.White,
-        secondaryContainer = ComposeColor(0xFFF2EAD6),
-        onSecondaryContainer = ComposeColor(0xFF2C2518),
-        surface = ComposeColor(0xFFFFFCF3),
-        surfaceVariant = ComposeColor(0xFFF7F2E6),
-        onSurface = ComposeColor(0xFF2B2822),
-        onSurfaceVariant = ComposeColor(0xFF5A5448),
-        outline = ComposeColor(0xFFD8CFBA)
-    )
-    MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, content = content)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddRecipeScreen(
@@ -906,14 +887,10 @@ private fun AddRecipeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(ComposeColor(0xFFFFF8E8), ComposeColor(0xFFFFFDF7))
-                )
-            )
+            .background(dogCuisineBackgroundBrush())
     ) {
         Scaffold(
-            containerColor = ComposeColor.Transparent,
+            containerColor = DogCuisineColors.Transparent,
             topBar = {
                 TopAppBar(
                     title = { Text(text = title, fontWeight = FontWeight.SemiBold) },
@@ -1058,7 +1035,7 @@ private fun CoverSelector(
         } else {
             Text(
                 text = "添加封面",
-                color = ComposeColor(0xFF6B7280),
+                color = DogCuisineColors.TextMuted,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.Center)
             )
@@ -1072,7 +1049,7 @@ private fun SectionTitle(text: String) {
         text = text,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = ComposeColor(0xFF111827)
+        color = DogCuisineColors.TextPrimary
     )
 }
 
@@ -1215,7 +1192,7 @@ private fun TextProxyField(
     ) {
         Text(
             text = if (hasText) text else hint,
-            color = if (hasText) ComposeColor(0xFF111827) else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (hasText) DogCuisineColors.TextPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.graphicsLayer(alpha = alpha)
         )
     }
@@ -1361,7 +1338,7 @@ private fun ImagePreviewDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ComposeColor(0xCC000000))
+                .background(DogCuisineColors.Scrim)
                 .clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center
         ) {

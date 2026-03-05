@@ -36,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -101,7 +100,7 @@ class SearchRecipeActivity : AppCompatActivity() {
         recipeDao = app.getDatabase().recipeDao()
 
         setContent {
-            SearchRecipeTheme {
+            DogCuisineTheme {
                 SearchRecipeScreen(
                     keyword = keyword,
                     showResultPanel = showResultPanel,
@@ -169,24 +168,6 @@ class SearchRecipeActivity : AppCompatActivity() {
 }
 
 @Composable
-private fun SearchRecipeTheme(content: @Composable () -> Unit) {
-    val scheme = lightColorScheme(
-        primary = Color(0xFFFEF1A5),
-        onPrimary = Color(0xFF2C2518),
-        secondary = Color(0xFF4A3F2B),
-        onSecondary = Color.White,
-        secondaryContainer = Color(0xFFF2EAD6),
-        onSecondaryContainer = Color(0xFF2C2518),
-        surface = Color(0xFFFFFCF3),
-        surfaceVariant = Color(0xFFF7F2E6),
-        onSurface = Color(0xFF2B2822),
-        onSurfaceVariant = Color(0xFF5A5448),
-        outline = Color(0xFFD8CFBA)
-    )
-    MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, content = content)
-}
-
-@Composable
 private fun SearchRecipeScreen(
     keyword: String,
     showResultPanel: Boolean,
@@ -211,7 +192,7 @@ private fun SearchRecipeScreen(
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = DogCuisineColors.Transparent,
         topBar = {
             SearchTopBar(
                 keyword = keyword,
@@ -325,10 +306,10 @@ private fun SearchKeywordField(
         textStyle = TextStyle(
             fontSize = 15.sp,
             lineHeight = 20.sp,
-            color = Color(0xFF111827),
+            color = DogCuisineColors.TextPrimary,
             textAlign = TextAlign.Start
         ),
-        cursorBrush = SolidColor(Color(0xFF111827)),
+        cursorBrush = SolidColor(DogCuisineColors.TextPrimary),
         modifier = modifier
             .focusRequester(focusRequester)
             .clip(RoundedCornerShape(10.dp))
@@ -344,7 +325,7 @@ private fun SearchKeywordField(
                 if (value.isEmpty()) {
                     Text(
                         text = "搜索菜谱",
-                        color = Color(0xFF9CA3AF),
+                        color = DogCuisineColors.TextPlaceholder,
                         fontSize = 15.sp,
                         lineHeight = 20.sp
                     )

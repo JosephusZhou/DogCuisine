@@ -31,7 +31,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -97,7 +96,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         setContent {
-            RecipeDetailTheme {
+            DogCuisineTheme {
                 RecipeDetailScreen(
                     recipeName = recipeName,
                     categoryName = categoryName,
@@ -199,24 +198,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 }
 
-@Composable
-private fun RecipeDetailTheme(content: @Composable () -> Unit) {
-    val scheme = lightColorScheme(
-        primary = Color(0xFFFEF1A5),
-        onPrimary = Color(0xFF2C2518),
-        secondary = Color(0xFF4A3F2B),
-        onSecondary = Color.White,
-        secondaryContainer = Color(0xFFF2EAD6),
-        onSecondaryContainer = Color(0xFF2C2518),
-        surface = Color(0xFFFFFCF3),
-        surfaceVariant = Color(0xFFF7F2E6),
-        onSurface = Color(0xFF2B2822),
-        onSurfaceVariant = Color(0xFF5A5448),
-        outline = Color(0xFFD8CFBA)
-    )
-    MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, content = content)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RecipeDetailScreen(
@@ -234,14 +215,10 @@ private fun RecipeDetailScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFFF8E8), Color(0xFFFFFDF7))
-                )
-            )
+            .background(dogCuisineBackgroundBrush())
     ) {
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = DogCuisineColors.Transparent,
             topBar = {
                 TopAppBar(
                     title = { Text(text = "菜谱详情", fontWeight = FontWeight.SemiBold) },
@@ -299,7 +276,7 @@ private fun RecipeDetailScreen(
                 Text(
                     text = recipeName,
                     style = MaterialTheme.typography.headlineSmall,
-                    color = Color(0xFF111827),
+                    color = DogCuisineColors.TextPrimary,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp)
@@ -317,7 +294,7 @@ private fun RecipeDetailScreen(
                 Text(
                     text = "食材",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF111827),
+                    color = DogCuisineColors.TextPrimary,
                     fontWeight = FontWeight.Bold
                 )
                 IngredientCard(
@@ -331,7 +308,7 @@ private fun RecipeDetailScreen(
                 Text(
                     text = "步骤",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF111827),
+                    color = DogCuisineColors.TextPrimary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -425,7 +402,7 @@ private fun IngredientCard(
             Text(
                 text = if (hasText) text else "暂无食材",
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (hasText) Color(0xFF111827) else Color(0xFF9CA3AF)
+                color = if (hasText) DogCuisineColors.TextPrimary else DogCuisineColors.TextPlaceholder
             )
             if (hasImages) {
                 Column(
@@ -467,14 +444,14 @@ private fun StepCard(
             Text(
                 text = "步骤 ${index + 1}",
                 style = MaterialTheme.typography.titleSmall,
-                color = Color(0xFF111827),
+                color = DogCuisineColors.TextPrimary,
                 fontWeight = FontWeight.Bold
             )
             if (hasText) {
                 Text(
                     text = stepText,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFF111827),
+                    color = DogCuisineColors.TextPrimary,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -536,7 +513,7 @@ private fun ImagePreviewDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xCC000000))
+                .background(DogCuisineColors.Scrim)
                 .clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center
         ) {

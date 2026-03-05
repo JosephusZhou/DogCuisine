@@ -19,6 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dogcuisine.R;
@@ -174,7 +175,7 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         Dialog dialog = new Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         ImageView iv = new ImageView(context);
         iv.setImageURI(Uri.fromFile(new File(path)));
-        iv.setBackgroundColor(0xCC000000);
+        iv.setBackgroundColor(ContextCompat.getColor(context, R.color.dog_scrim));
         iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
         iv.setOnClickListener(v -> dialog.dismiss());
         dialog.setContentView(iv);

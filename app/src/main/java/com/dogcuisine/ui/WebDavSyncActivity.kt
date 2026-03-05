@@ -31,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,7 +81,7 @@ class WebDavSyncActivity : AppCompatActivity() {
         loadConfig()
 
         setContent {
-            WebDavSyncTheme {
+            DogCuisineTheme {
                 WebDavSyncScreen(
                     isSyncing = isSyncing,
                     webDavUrl = webDavUrl,
@@ -208,24 +207,6 @@ class WebDavSyncActivity : AppCompatActivity() {
     }
 }
 
-@Composable
-private fun WebDavSyncTheme(content: @Composable () -> Unit) {
-    val scheme = lightColorScheme(
-        primary = Color(0xFFFEF1A5),
-        onPrimary = Color(0xFF2C2518),
-        secondary = Color(0xFF4A3F2B),
-        onSecondary = Color.White,
-        secondaryContainer = Color(0xFFF2EAD6),
-        onSecondaryContainer = Color(0xFF2C2518),
-        surface = Color(0xFFFFFCF3),
-        surfaceVariant = Color(0xFFF7F2E6),
-        onSurface = Color(0xFF2B2822),
-        onSurfaceVariant = Color(0xFF5A5448),
-        outline = Color(0xFFD8CFBA)
-    )
-    MaterialTheme(colorScheme = scheme, typography = MaterialTheme.typography, content = content)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WebDavSyncScreen(
@@ -246,14 +227,10 @@ private fun WebDavSyncScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFFF8E8), Color(0xFFFFFDF7))
-                )
-            )
+            .background(dogCuisineBackgroundBrush())
     ) {
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = DogCuisineColors.Transparent,
             topBar = {
                 TopAppBar(
                     title = {
