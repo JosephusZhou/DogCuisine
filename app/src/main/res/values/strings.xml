@@ -1,9 +1,161 @@
 <resources>
     <string name="app_name">线条小狗菜谱</string>
     <string name="recipes_title">菜谱</string>
+    <string name="recipes_title_with_count">菜谱（%1$d）</string>
     <string name="add_recipe_title">添加菜谱</string>
+    <string name="add_recipe_edit_title">编辑菜谱</string>
     <string name="add_images">添加图片</string>
     <string name="delete_step">删除步骤</string>
     <string name="step_title">步骤 %1$d</string>
     <string name="drag_to_reorder">长按拖动排序</string>
+
+    <string name="common_back">返回</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_confirm">确定</string>
+    <string name="common_save">保存</string>
+    <string name="common_edit">修改</string>
+    <string name="common_delete">删除</string>
+    <string name="common_more">更多</string>
+    <string name="common_show">显示</string>
+    <string name="common_hide">隐藏</string>
+    <string name="common_done">完成</string>
+
+    <string name="category_favorites">收藏</string>
+    <string name="category_default">未分类</string>
+    <string name="category_staple">主食</string>
+    <string name="category_snack">小食</string>
+    <string name="category_empty">暂无分类</string>
+
+    <string name="main_browse_tip">按分类浏览，长按卡片删除</string>
+    <string name="menu_sync">同步</string>
+    <string name="menu_backup_restore">备份与恢复</string>
+    <string name="label_category">分类</string>
+    <string name="last_edited_format">最近编辑：%1$s</string>
+    <string name="empty_recipes_title">暂无菜谱</string>
+    <string name="empty_recipes_hint">点击右上角添加</string>
+    <string name="delete_recipe_title">删除菜谱</string>
+    <string name="delete_recipe_message">确定删除“%1$s”吗？</string>
+    <string name="delete_missing_id_toast">无法删除：ID 缺失</string>
+    <string name="deleted_toast">已删除</string>
+
+    <string name="search_hint">搜索菜谱</string>
+    <string name="search_empty_title">未找到匹配菜谱</string>
+    <string name="search_empty_hint">换个关键词试试</string>
+
+    <string name="recipe_detail_title">菜谱详情</string>
+    <string name="recipe_invalid_toast">无效的菜谱</string>
+    <string name="recipe_not_found_toast">未找到菜谱</string>
+    <string name="recipe_no_steps">暂无步骤</string>
+    <string name="recipe_no_ingredient">暂无食材</string>
+    <string name="recipe_favorite_desc">收藏</string>
+    <string name="recipe_edit_desc">修改</string>
+    <string name="label_ingredient">食材</string>
+    <string name="label_steps">步骤</string>
+
+    <string name="edit_ingredient_title">编辑食材</string>
+    <string name="edit_step_title">编辑步骤</string>
+    <string name="recipe_name_label">菜谱名称</string>
+    <string name="recipe_name_placeholder">请输入菜谱名称</string>
+    <string name="recipe_category_label">菜谱分类</string>
+    <string name="add_step">添加步骤</string>
+    <string name="add_cover">添加封面</string>
+    <string name="ingredient_text_hint">请输入食材文字（可选）</string>
+    <string name="step_text_hint">请输入步骤文字（可选）</string>
+    <string name="recipe_name_required_toast">请输入菜谱名称</string>
+    <string name="save_success_toast">保存成功</string>
+    <string name="image_process_failed_toast">图片处理失败</string>
+    <string name="delete_image_desc">删除图片</string>
+    <string name="drag_reorder_desc">拖动排序</string>
+
+    <string name="webdav_sync_info">说明：同步会包含数据库和所有图片。</string>
+    <string name="webdav_uploading_background_toast">正在后台上传中，不可操作</string>
+    <string name="webdav_url_required_toast">请填写 WebDAV URL</string>
+    <string name="webdav_uploading">正在上传数据库和图片到 WebDAV...</string>
+    <string name="webdav_upload_done">上传完成</string>
+    <string name="webdav_upload_success">上传成功</string>
+    <string name="webdav_upload_failed">上传失败</string>
+    <string name="webdav_upload_failed_with_reason">上传失败: %1$s</string>
+    <string name="webdav_restoring">正在从 WebDAV 恢复数据库和图片...</string>
+    <string name="webdav_restore_done">恢复完成</string>
+    <string name="webdav_restore_success">恢复成功</string>
+    <string name="webdav_restore_failed">恢复失败</string>
+    <string name="webdav_restore_failed_with_reason">恢复失败: %1$s</string>
+    <string name="webdav_title">WebDAV 同步</string>
+    <string name="webdav_subtitle">上传或恢复数据库与图片</string>
+    <string name="webdav_url_label">WebDAV 目录 URL</string>
+    <string name="webdav_url_placeholder">例如：https://example.com/dav</string>
+    <string name="webdav_username_label">用户名</string>
+    <string name="webdav_password_label">密码</string>
+    <string name="webdav_upload_button">上传到 WebDAV</string>
+    <string name="webdav_restore_button">从 WebDAV 恢复</string>
+    <string name="webdav_invalid_remote_path">非法远端路径: %1$s</string>
+    <string name="webdav_file_checksum_failed">文件校验失败: %1$s</string>
+    <string name="webdav_manifest_missing">远端不存在 manifest.json，请先执行一次上传同步</string>
+    <string name="webdav_manifest_download_failed">下载 manifest 失败，HTTP %1$d</string>
+    <string name="webdav_upload_http_failed">WebDAV 上传失败，HTTP %1$d - %2$s</string>
+    <string name="webdav_download_http_failed">WebDAV 下载失败，HTTP %1$d - %2$s</string>
+    <string name="webdav_delete_http_failed">WebDAV 删除失败，HTTP %1$d - %2$s</string>
+
+    <string name="crop_invalid_image_toast">图片无效</string>
+    <string name="crop_load_failed_toast">读取图片失败</string>
+    <string name="crop_failed_toast">裁剪失败</string>
+    <string name="crop_cover_title">裁剪封面</string>
+
+    <string name="backup_restore_title">备份与恢复</string>
+    <string name="backup_restore_subtitle">导出 zip 或从 zip 恢复数据</string>
+    <string name="backup_local_title">本地备份</string>
+    <string name="backup_local_desc">备份数据库和图片到下载目录</string>
+    <string name="backup_local_action">创建备份</string>
+    <string name="restore_local_title">本地恢复</string>
+    <string name="restore_local_desc">选择备份 zip 恢复数据库和图片</string>
+    <string name="restore_local_action">选择并恢复</string>
+    <string name="backup_done_status">备份完成，备份路径为：%1$s</string>
+    <string name="backup_failed_toast">备份失败: %1$s</string>
+    <string name="restore_done_status">恢复完成</string>
+    <string name="restore_failed_toast">恢复失败: %1$s</string>
+    <string name="backup_create_dir_failed">无法创建下载目录文件</string>
+    <string name="backup_write_dir_failed">无法写入下载目录文件</string>
+    <string name="backup_read_failed">无法读取文件</string>
+
+    <string name="category_manage_title">菜谱分类</string>
+    <string name="category_manage_subtitle">拖动排序，编辑后点右上角保存</string>
+    <string name="add_category_title">新增分类</string>
+    <string name="edit_category_title">编辑分类</string>
+    <string name="category_name_hint">请输入分类名称</string>
+    <string name="delete_blocked_title">无法删除</string>
+    <string name="delete_blocked_message">该分类下有菜谱，无法删除。</string>
+    <string name="got_it">知道了</string>
+    <string name="unsaved_changes_title">未保存修改</string>
+    <string name="unsaved_changes_message">有未保存的修改，是否先保存再返回？</string>
+    <string name="save_and_back">保存并返回</string>
+    <string name="back_without_save">直接返回</string>
+    <string name="category_name_empty_toast">名称不能为空</string>
+    <string name="no_categories_to_save_toast">暂无可保存的分类</string>
+    <string name="categories_saved_toast">分类已保存</string>
+    <string name="save_failed_toast">保存失败: %1$s</string>
+    <string name="content_desc_edit">编辑</string>
+    <string name="content_desc_delete">删除</string>
+    <string name="content_desc_reorder">拖动排序</string>
+    <string name="content_desc_add_category">新增分类</string>
+
+    <string name="level_up_prefix">恭喜你达成</string>
+    <string name="level_up_default_title">狗狗学徒</string>
+    <string name="level_up_suffix">的称号</string>
+    <string name="level_up_celebration_desc">庆祝</string>
+
+    <string name="sample_recipe_1_name">宫保鸡丁</string>
+    <string name="sample_recipe_1_desc">花生脆香，微辣下饭。</string>
+    <string name="sample_recipe_2_name">红烧肉</string>
+    <string name="sample_recipe_2_desc">酱香浓郁，肥而不腻。</string>
+    <string name="sample_recipe_3_name">清炒西兰花</string>
+    <string name="sample_recipe_3_desc">清爽脆嫩，保留蔬菜本味。</string>
+
+    <string-array name="level_names">
+        <item>暗黑料理制造者</item>
+        <item>狗狗学徒</item>
+        <item>初级狗狗厨师</item>
+        <item>中级狗狗厨霸</item>
+        <item>高级狗狗厨王</item>
+        <item>特级狗狗厨神</item>
+    </string-array>
 </resources>

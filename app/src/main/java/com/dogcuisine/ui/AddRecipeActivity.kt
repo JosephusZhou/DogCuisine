@@ -92,12 +92,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.dogcuisine.App
 import com.dogcuisine.R
@@ -191,7 +190,11 @@ class AddRecipeActivity : AppCompatActivity() {
         setContent {
             DogCuisineTheme {
                 AddRecipeScreen(
-                    title = if (editingId > 0L) "编辑菜谱" else getString(R.string.add_recipe_title),
+                    title = if (editingId > 0L) {
+                        getString(R.string.add_recipe_edit_title)
+                    } else {
+                        getString(R.string.add_recipe_title)
+                    },
                     recipeName = recipeName,
                     coverPath = coverPath,
                     selectedCategoryId = selectedCategoryId,
@@ -207,7 +210,7 @@ class AddRecipeActivity : AppCompatActivity() {
                     onNameChange = { recipeName = it },
                     onCategorySelected = { selectedCategoryId = it },
                     onIngredientTextClick = {
-                        showBottomTextEditor("编辑食材", ingredientText) { text ->
+                        showBottomTextEditor(getString(R.string.edit_ingredient_title), ingredientText) { text ->
                             ingredientText = text
                         }
                     },
@@ -217,7 +220,7 @@ class AddRecipeActivity : AppCompatActivity() {
                     onAddStep = { addStep() },
                     onStepTextClick = { index, currentText ->
                         if (index in steps.indices) {
-                            showBottomTextEditor("编辑步骤", currentText) { text ->
+                            showBottomTextEditor(getString(R.string.edit_step_title), currentText) { text ->
                                 updateStepText(index, text)
                             }
                         }
@@ -408,7 +411,7 @@ class AddRecipeActivity : AppCompatActivity() {
     private fun saveRecipe() {
         val name = recipeName.trim()
         if (name.isEmpty()) {
-            Toast.makeText(this, "请输入菜谱名称", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.recipe_name_required_toast), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -459,7 +462,7 @@ class AddRecipeActivity : AppCompatActivity() {
             val levelUpName = if (editingIdSnapshot > 0L) null else checkLevelUpIfNeeded()
             runOnUiThread {
                 App.getInstance().requestAutoWebDavUploadIfConfigured()
-                Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.save_success_toast), Toast.LENGTH_SHORT).show()
                 if (!levelUpName.isNullOrEmpty()) {
                     showLevelUpDialog(levelUpName)
                 } else {
@@ -474,7 +477,7 @@ class AddRecipeActivity : AppCompatActivity() {
             val entity = recipeDao.getById(id)
             runOnUiThread {
                 if (entity == null) {
-                    Toast.makeText(this, "未找到菜谱", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.recipe_not_found_toast), Toast.LENGTH_SHORT).show()
                     finish()
                     return@runOnUiThread
                 }
@@ -564,6 +567,17 @@ class AddRecipeActivity : AppCompatActivity() {
     private fun checkLevelUpIfNeeded(): String? {
         return try {
             val recipeCount = recipeDao.count()
+            val levelNames = resources.getStringArray(R.array.level_names)
+            val maxLevelIndex = minOf(levelNames.size, LevelConfig.size())
+            fun levelNameAt(index: Int): String? {
+                return if (index in 0 until maxLevelIndex) levelNames[index] else null
+            }
+            fun levelIndexOf(name: String?): Int {
+                if (name.isNullOrBlank()) return -1
+                val index = levelNames.indexOf(name)
+                return if (index in 0 until maxLevelIndex) index else -1
+            }
+
             var profile = userProfileDao.profile
             if (profile == null) {
                 val id = userProfileDao.insert(UserProfileEntity(0, null))
@@ -575,19 +589,19 @@ class AddRecipeActivity : AppCompatActivity() {
                 val reachedIndex = LevelConfig.getHighestReachedIndex(recipeCount)
                 if (reachedIndex >= 0) {
                     val profileId = ensureProfileId(profile)
-                    val levelName = LevelConfig.getLevelName(reachedIndex) ?: return null
+                    val levelName = levelNameAt(reachedIndex) ?: return null
                     userProfileDao.updateLevel(profileId, levelName)
                     return levelName
                 }
                 return null
             }
 
-            val currentIndex = LevelConfig.getLevelIndex(currentLevel)
+            val currentIndex = levelIndexOf(currentLevel)
             if (currentIndex < 0) {
                 val reachedIndex = LevelConfig.getHighestReachedIndex(recipeCount)
                 if (reachedIndex >= 0) {
                     val profileId = ensureProfileId(profile)
-                    val levelName = LevelConfig.getLevelName(reachedIndex) ?: return null
+                    val levelName = levelNameAt(reachedIndex) ?: return null
                     userProfileDao.updateLevel(profileId, levelName)
                     return levelName
                 }
@@ -597,7 +611,7 @@ class AddRecipeActivity : AppCompatActivity() {
             val nextIndex = currentIndex + 1
             if (nextIndex < LevelConfig.size() && recipeCount >= LevelConfig.getRequiredCount(nextIndex)) {
                 val profileId = ensureProfileId(profile)
-                val levelName = LevelConfig.getLevelName(nextIndex) ?: return null
+                val levelName = levelNameAt(nextIndex) ?: return null
                 userProfileDao.updateLevel(profileId, levelName)
                 return levelName
             }
@@ -682,7 +696,7 @@ class AddRecipeActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             runOnUiThread {
-                Toast.makeText(this, "图片处理失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.image_process_failed_toast), Toast.LENGTH_SHORT).show()
             }
             null
         }
@@ -713,7 +727,7 @@ class AddRecipeActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             runOnUiThread {
-                Toast.makeText(this, "图片处理失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.image_process_failed_toast), Toast.LENGTH_SHORT).show()
             }
             null
         }
@@ -883,7 +897,7 @@ private fun AddRecipeScreen(
                         IconButton(onClick = onBack) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_back_gold),
-                                contentDescription = "返回",
+                                contentDescription = stringResource(R.string.common_back),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -892,7 +906,7 @@ private fun AddRecipeScreen(
                         IconButton(onClick = onSave) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_save_gold),
-                                contentDescription = "保存",
+                                contentDescription = stringResource(R.string.common_save),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -915,7 +929,7 @@ private fun AddRecipeScreen(
                         onClick = onAddStep,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "添加步骤", color = MaterialTheme.colorScheme.secondary)
+                        Text(text = stringResource(R.string.add_step), color = MaterialTheme.colorScheme.secondary)
                     }
                 }
             }
@@ -941,7 +955,7 @@ private fun AddRecipeScreen(
                     }
                 }
                 item(key = "name-title") {
-                    SectionTitle(text = "菜谱名称")
+                    SectionTitle(text = stringResource(R.string.recipe_name_label))
                 }
                 item(key = "name-input") {
                     OutlinedTextField(
@@ -949,12 +963,12 @@ private fun AddRecipeScreen(
                         onValueChange = onNameChange,
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("请输入菜谱名称") },
+                        placeholder = { Text(stringResource(R.string.recipe_name_placeholder)) },
                         colors = appOutlinedTextFieldColors()
                     )
                 }
                 item(key = "category-title") {
-                    SectionTitle(text = "菜谱分类")
+                    SectionTitle(text = stringResource(R.string.recipe_category_label))
                 }
                 item(key = "category-selector") {
                     CategorySelector(
@@ -964,7 +978,7 @@ private fun AddRecipeScreen(
                     )
                 }
                 item(key = "ingredient-title") {
-                    SectionTitle(text = "食材")
+                    SectionTitle(text = stringResource(R.string.label_ingredient))
                 }
                 item(key = "ingredient-card") {
                     IngredientCard(
@@ -977,7 +991,7 @@ private fun AddRecipeScreen(
                     )
                 }
                 item(key = "steps-title") {
-                    SectionTitle(text = "步骤")
+                    SectionTitle(text = stringResource(R.string.label_steps))
                 }
                 itemsIndexed(
                     items = steps,
@@ -1036,7 +1050,7 @@ private fun CoverSelector(
             )
         } else {
             Text(
-                text = "添加封面",
+                text = stringResource(R.string.add_cover),
                 color = DogCuisineColors.TextMuted,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.Center)
@@ -1075,7 +1089,7 @@ private fun CategorySelector(
     var expanded by remember { mutableStateOf(false) }
     val selectedName = categoryOptions.firstOrNull { it.id == selectedCategoryId }?.name
         ?: categoryOptions.firstOrNull()?.name
-        ?: "暂无分类"
+        ?: stringResource(R.string.category_empty)
 
     ExposedDropdownMenuBox(
         expanded = expanded && categoryOptions.isNotEmpty(),
@@ -1137,7 +1151,7 @@ private fun IngredientCard(
         Column(modifier = Modifier.padding(12.dp)) {
             TextProxyField(
                 text = text,
-                hint = "请输入食材文字（可选）",
+                hint = stringResource(R.string.ingredient_text_hint),
                 onClick = onTextClick
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -1148,7 +1162,7 @@ private fun IngredientCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(onClick = onAddImages, modifier = Modifier.fillMaxWidth()) {
-                Text(text = "添加图片", color = MaterialTheme.colorScheme.secondary)
+                Text(text = stringResource(R.string.add_images), color = MaterialTheme.colorScheme.secondary)
             }
         }
     }
@@ -1183,7 +1197,7 @@ private fun StepCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "步骤 ${index + 1}",
+                    text = stringResource(R.string.step_title, index + 1),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
@@ -1191,7 +1205,7 @@ private fun StepCard(
                 Spacer(modifier = Modifier.weight(1f))
                 Icon(
                     painter = painterResource(id = R.drawable.ic_sort_gold),
-                    contentDescription = "拖动排序",
+                    contentDescription = stringResource(R.string.drag_reorder_desc),
                     modifier = dragHandleModifier
                         .padding(4.dp)
                         .size(24.dp),
@@ -1217,7 +1231,7 @@ private fun StepCard(
                     border = BorderStroke(1.dp, ComposeColor(0xFFD8CFBA))
                 ) {
                     Text(
-                        text = "添加图片",
+                        text = stringResource(R.string.add_images),
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
@@ -1228,7 +1242,7 @@ private fun StepCard(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
                 ) {
                     Text(
-                        text = "删除步骤",
+                        text = stringResource(R.string.delete_step),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -1255,7 +1269,7 @@ private fun StepTextProxyField(
         contentAlignment = Alignment.TopStart
     ) {
         Text(
-            text = if (hasText) text else "请输入步骤文字（可选）",
+            text = if (hasText) text else stringResource(R.string.step_text_hint),
             color = if (hasText) DogCuisineColors.TextPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.graphicsLayer(alpha = alpha)
         )
@@ -1376,7 +1390,7 @@ private fun ImageTile(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_close_gold),
-                contentDescription = "删除图片",
+                contentDescription = stringResource(R.string.delete_image_desc),
                 tint = closeTint,
                 modifier = Modifier.size(18.dp)
             )
@@ -1427,31 +1441,4 @@ private fun LocalImage(
         fallback = placeholderPainter,
         modifier = modifier
     )
-}
-
-@Composable
-private fun ImagePreviewDialog(
-    imagePath: String,
-    onDismiss: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(DogCuisineColors.Scrim)
-                .clickable(onClick = onDismiss),
-            contentAlignment = Alignment.Center
-        ) {
-            LocalImage(
-                imagePath = imagePath,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            )
-        }
-    }
 }

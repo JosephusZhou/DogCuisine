@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.dogcuisine.App
@@ -119,13 +120,17 @@ class BackupRestoreActivity : AppCompatActivity() {
                 val path = createBackupZip()
                 runOnUiThread {
                     setLoading(false)
-                    backupStatus = "备份完成，备份路径为：$path"
+                    backupStatus = getString(R.string.backup_done_status, path)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread {
                     setLoading(false)
-                    Toast.makeText(this, "备份失败: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.backup_failed_toast, e.message),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -140,14 +145,18 @@ class BackupRestoreActivity : AppCompatActivity() {
                 restoreFromZip(tempZip)
                 runOnUiThread {
                     setLoading(false)
-                    restoreStatus = "恢复完成"
+                    restoreStatus = getString(R.string.restore_done_status)
                     setResult(RESULT_OK)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread {
                     setLoading(false)
-                    Toast.makeText(this, "恢复失败: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.restore_failed_toast, e.message),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -168,10 +177,10 @@ class BackupRestoreActivity : AppCompatActivity() {
         }
 
         val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            ?: throw IllegalStateException("无法创建下载目录文件")
+            ?: throw IllegalStateException(getString(R.string.backup_create_dir_failed))
 
         val out = contentResolver.openOutputStream(uri)
-            ?: throw IllegalStateException("无法写入下载目录文件")
+            ?: throw IllegalStateException(getString(R.string.backup_write_dir_failed))
 
         out.use { outStream ->
             ZipOutputStream(BufferedOutputStream(outStream)).use { zos ->
@@ -271,7 +280,7 @@ class BackupRestoreActivity : AppCompatActivity() {
     private fun copyUriToCache(uri: Uri): File {
         val out = File(cacheDir, "restore.zip")
         val input = contentResolver.openInputStream(uri)
-            ?: throw IllegalStateException("无法读取文件")
+            ?: throw IllegalStateException(getString(R.string.backup_read_failed))
         input.use { source ->
             FileOutputStream(out).use { os ->
                 val buffer = ByteArray(4096)
@@ -361,9 +370,9 @@ private fun BackupRestoreScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text("备份与恢复", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.backup_restore_title), fontWeight = FontWeight.SemiBold)
                             Text(
-                                text = "导出 zip 或从 zip 恢复数据",
+                                text = stringResource(R.string.backup_restore_subtitle),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
                             )
@@ -373,7 +382,7 @@ private fun BackupRestoreScreen(
                         IconButton(onClick = onBack) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_back_gold),
-                                contentDescription = "返回",
+                                contentDescription = stringResource(R.string.common_back),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -394,17 +403,17 @@ private fun BackupRestoreScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ActionCard(
-                    title = "本地备份",
-                    description = "备份数据库和图片到下载目录",
-                    actionText = "创建备份",
+                    title = stringResource(R.string.backup_local_title),
+                    description = stringResource(R.string.backup_local_desc),
+                    actionText = stringResource(R.string.backup_local_action),
                     status = backupStatus,
                     enabled = !isWorking,
                     onAction = onBackupClick
                 )
                 ActionCard(
-                    title = "本地恢复",
-                    description = "选择备份 zip 恢复数据库和图片",
-                    actionText = "选择并恢复",
+                    title = stringResource(R.string.restore_local_title),
+                    description = stringResource(R.string.restore_local_desc),
+                    actionText = stringResource(R.string.restore_local_action),
                     status = restoreStatus,
                     enabled = !isWorking,
                     onAction = onRestoreClick

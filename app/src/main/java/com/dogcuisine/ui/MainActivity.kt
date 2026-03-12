@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen
@@ -132,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             DogCuisineTheme {
                 MainScreen(
-                    title = getString(R.string.recipes_title) + "（$totalRecipeCount）",
+                    title = getString(R.string.recipes_title_with_count, totalRecipeCount),
                     categories = categories,
                     selectedCategoryId = selectedCategoryId,
                     recipes = recipes,
@@ -226,7 +227,9 @@ class MainActivity : AppCompatActivity() {
                 nextSelected = FAVORITES_CATEGORY_ID
             }
 
-            val displayList = mutableListOf(CategoryEntity(FAVORITES_CATEGORY_ID, "收藏", Int.MIN_VALUE))
+            val displayList = mutableListOf(
+                CategoryEntity(FAVORITES_CATEGORY_ID, getString(R.string.category_favorites), Int.MIN_VALUE)
+            )
             displayList.addAll(dbCategories)
 
             runOnUiThread {
@@ -257,14 +260,14 @@ class MainActivity : AppCompatActivity() {
     private fun deleteRecipe(recipe: RecipeEntity) {
         val recipeId = recipe.id
         if (recipeId == null) {
-            Toast.makeText(this, "无法删除：ID 缺失", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.delete_missing_id_toast), Toast.LENGTH_SHORT).show()
             return
         }
         ioExecutor.execute {
             deleteImages(recipe)
             database.recipeDao().deleteById(recipeId)
             runOnUiThread {
-                Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.deleted_toast), Toast.LENGTH_SHORT).show()
                 loadRecipesForSelectedCategory()
             }
         }
@@ -392,7 +395,7 @@ private fun MainTopBar(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "按分类浏览，长按卡片删除",
+                    text = stringResource(R.string.main_browse_tip),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
                 )
@@ -410,7 +413,7 @@ private fun MainTopBar(
                 IconButton(onClick = { onOverflowExpandedChange(true) }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_more_vert_gold),
-                        contentDescription = "更多",
+                        contentDescription = stringResource(R.string.common_more),
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -419,14 +422,14 @@ private fun MainTopBar(
                     onDismissRequest = { onOverflowExpandedChange(false) }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("同步") },
+                        text = { Text(stringResource(R.string.menu_sync)) },
                         onClick = {
                             onOverflowExpandedChange(false)
                             onSyncClick()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("备份与恢复") },
+                        text = { Text(stringResource(R.string.menu_backup_restore)) },
                         onClick = {
                             onOverflowExpandedChange(false)
                             onBackupClick()
@@ -465,7 +468,7 @@ private fun CategoryPane(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Text(
-            text = "分类",
+            text = stringResource(R.string.label_category),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 6.dp)
@@ -586,7 +589,7 @@ private fun RecipeCard(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "最近编辑：$formattedTime",
+                text = stringResource(R.string.last_edited_format, formattedTime),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -638,13 +641,13 @@ private fun EmptyRecipeState() {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "暂无菜谱",
+            text = stringResource(R.string.empty_recipes_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "点击右上角添加",
+            text = stringResource(R.string.empty_recipes_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -660,11 +663,11 @@ private fun DeleteConfirmDialog(
     val target = recipe ?: return
     AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = "删除菜谱",
-        message = "确定删除“${target.name}”吗？",
-        confirmText = "删除",
+        title = stringResource(R.string.delete_recipe_title),
+        message = stringResource(R.string.delete_recipe_message, target.name),
+        confirmText = stringResource(R.string.common_delete),
         onConfirm = { onConfirm(target) },
-        dismissText = "取消",
+        dismissText = stringResource(R.string.common_cancel),
         onDismiss = onDismiss
     )
 }

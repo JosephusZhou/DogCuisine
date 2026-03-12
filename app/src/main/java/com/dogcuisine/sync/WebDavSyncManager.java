@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.dogcuisine.App;
+import com.dogcuisine.R;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -115,7 +116,7 @@ public class WebDavSyncManager {
         for (ManifestFile item : manifest.files) {
             File outFile = new File(workspace, item.path);
             if (!isChildPath(workspace, outFile)) {
-                throw new IOException("非法远端路径: " + item.path);
+                throw new IOException(context.getString(R.string.webdav_invalid_remote_path, item.path));
             }
             File parent = outFile.getParentFile();
             if (parent != null && !parent.exists()) parent.mkdirs();
@@ -124,7 +125,7 @@ public class WebDavSyncManager {
             // 完整性校验
             String actual = sha256(outFile);
             if (!actual.equals(item.sha256)) {
-                throw new IOException("文件校验失败: " + item.path);
+                throw new IOException(context.getString(R.string.webdav_file_checksum_failed, item.path));
             }
         }
 
@@ -258,7 +259,7 @@ public class WebDavSyncManager {
                                           @Nullable String password) throws Exception {
         SyncManifest manifest = downloadManifestIfExists(baseUrl, username, password);
         if (manifest == null) {
-            throw new IOException("远端不存在 manifest.json，请先执行一次上传同步");
+            throw new IOException(context.getString(R.string.webdav_manifest_missing));
         }
         return manifest;
     }
@@ -279,7 +280,7 @@ public class WebDavSyncManager {
         if (code != 200) {
             d("manifest GET failed body=" + readErrorBodySafe(conn));
             conn.disconnect();
-            throw new IOException("下载 manifest 失败，HTTP " + code);
+            throw new IOException(context.getString(R.string.webdav_manifest_download_failed, code));
         }
         try (InputStream in = conn.getInputStream()) {
             byte[] data = readAllBytes(in);
@@ -332,7 +333,7 @@ public class WebDavSyncManager {
         if (!(code == 200 || code == 201 || code == 204)) {
             d("PUT failed body=" + readErrorBodySafe(conn));
             conn.disconnect();
-            throw new IOException("WebDAV 上传失败，HTTP " + code + " - " + url);
+            throw new IOException(context.getString(R.string.webdav_upload_http_failed, code, url));
         }
         conn.disconnect();
     }
@@ -348,7 +349,7 @@ public class WebDavSyncManager {
         if (code != 200) {
             d("GET failed body=" + readErrorBodySafe(conn));
             conn.disconnect();
-            throw new IOException("WebDAV 下载失败，HTTP " + code + " - " + url);
+            throw new IOException(context.getString(R.string.webdav_download_http_failed, code, url));
         }
         try (InputStream in = conn.getInputStream();
              OutputStream out = new FileOutputStream(outFile)) {
@@ -366,7 +367,7 @@ public class WebDavSyncManager {
         d("response DELETE " + url + " code=" + code);
         conn.disconnect();
         if (!(code == 200 || code == 202 || code == 204 || code == 404)) {
-            throw new IOException("WebDAV 删除失败，HTTP " + code + " - " + url);
+            throw new IOException(context.getString(R.string.webdav_delete_http_failed, code, url));
         }
     }
 

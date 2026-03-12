@@ -52,9 +52,42 @@ public class App extends Application {
             if (count == 0) {
                 long now = System.currentTimeMillis();
                 List<RecipeEntity> seeds = Arrays.asList(
-                        new RecipeEntity(null, "宫保鸡丁", now, now, "花生脆香，微辣下饭。", null, "[]", "", defaultCategoryId, 0),
-                        new RecipeEntity(null, "红烧肉", now, now, "酱香浓郁，肥而不腻。", null, "[]", "", defaultCategoryId, 0),
-                        new RecipeEntity(null, "清炒西兰花", now, now, "清爽脆嫩，保留蔬菜本味。", null, "[]", "", defaultCategoryId, 0)
+                        new RecipeEntity(
+                                null,
+                                getString(R.string.sample_recipe_1_name),
+                                now,
+                                now,
+                                getString(R.string.sample_recipe_1_desc),
+                                null,
+                                "[]",
+                                "",
+                                defaultCategoryId,
+                                0
+                        ),
+                        new RecipeEntity(
+                                null,
+                                getString(R.string.sample_recipe_2_name),
+                                now,
+                                now,
+                                getString(R.string.sample_recipe_2_desc),
+                                null,
+                                "[]",
+                                "",
+                                defaultCategoryId,
+                                0
+                        ),
+                        new RecipeEntity(
+                                null,
+                                getString(R.string.sample_recipe_3_name),
+                                now,
+                                now,
+                                getString(R.string.sample_recipe_3_desc),
+                                null,
+                                "[]",
+                                "",
+                                defaultCategoryId,
+                                0
+                        )
                 );
                 database.recipeDao().insertAll(seeds);
             }
@@ -70,9 +103,9 @@ public class App extends Application {
             long categoryCount = categoryDao.count();
             if (categoryCount == 0) {
                 List<CategoryEntity> defaults = Arrays.asList(
-                        new CategoryEntity(null, "未分类", 0),
-                        new CategoryEntity(null, "主食", 1),
-                        new CategoryEntity(null, "小食", 2)
+                        new CategoryEntity(null, getString(R.string.category_default), 0),
+                        new CategoryEntity(null, getString(R.string.category_staple), 1),
+                        new CategoryEntity(null, getString(R.string.category_snack), 2)
                 );
                 List<Long> ids = categoryDao.insertAll(defaults);
                 if (ids != null && !ids.isEmpty()) {

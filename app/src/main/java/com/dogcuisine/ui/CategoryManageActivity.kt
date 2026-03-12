@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -111,8 +112,8 @@ class CategoryManageActivity : AppCompatActivity() {
                     onBack = { if (!isSaving) requestBackWithUnsavedCheck() },
                     onSave = { if (!isSaving) saveCategories() },
                     onMove = { from, to -> moveCategory(from, to) },
-                    onAdd = { showNameDialog("新增分类", null) },
-                    onEdit = { index -> showNameDialog("编辑分类", index) },
+                    onAdd = { showNameDialog(getString(R.string.add_category_title), null) },
+                    onEdit = { index -> showNameDialog(getString(R.string.edit_category_title), index) },
                     onDelete = { index -> tryDeleteCategory(index) }
                 )
 
@@ -123,9 +124,7 @@ class CategoryManageActivity : AppCompatActivity() {
                         title = dialog.title,
                         value = nameDialogInput,
                         onValueChange = { nameDialogInput = it },
-                        hint = "请输入分类名称",
-                        confirmText = "确定",
-                        dismissText = "取消",
+                        hint = stringResource(R.string.category_name_hint),
                         onConfirm = { confirmNameDialog(dialog) },
                         onDismiss = { dismissNameDialog() }
                     )
@@ -134,9 +133,9 @@ class CategoryManageActivity : AppCompatActivity() {
                 if (cannotDeleteDialogVisible) {
                     AppAlertDialog(
                         onDismissRequest = { cannotDeleteDialogVisible = false },
-                        title = "无法删除",
-                        message = "该分类下有菜谱，无法删除。",
-                        confirmText = "知道了",
+                        title = stringResource(R.string.delete_blocked_title),
+                        message = stringResource(R.string.delete_blocked_message),
+                        confirmText = stringResource(R.string.got_it),
                         onConfirm = { cannotDeleteDialogVisible = false },
                         dismissText = null
                     )
@@ -145,14 +144,14 @@ class CategoryManageActivity : AppCompatActivity() {
                 if (unsavedBackDialogVisible) {
                     AppAlertDialog(
                         onDismissRequest = { unsavedBackDialogVisible = false },
-                        title = "未保存修改",
-                        message = "有未保存的修改，是否先保存再返回？",
-                        confirmText = "保存并返回",
+                        title = stringResource(R.string.unsaved_changes_title),
+                        message = stringResource(R.string.unsaved_changes_message),
+                        confirmText = stringResource(R.string.save_and_back),
                         onConfirm = {
                             unsavedBackDialogVisible = false
                             saveCategories()
                         },
-                        dismissText = "直接返回",
+                        dismissText = stringResource(R.string.back_without_save),
                         onDismiss = {
                             unsavedBackDialogVisible = false
                             finish()
@@ -183,7 +182,7 @@ class CategoryManageActivity : AppCompatActivity() {
     private fun confirmNameDialog(dialog: NameDialogState) {
         val newName = nameDialogInput.trim()
         if (newName.isEmpty()) {
-            Toast.makeText(this, "名称不能为空", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.category_name_empty_toast), Toast.LENGTH_SHORT).show()
             return
         }
         val editingIndex = dialog.editingIndex
@@ -255,7 +254,7 @@ class CategoryManageActivity : AppCompatActivity() {
 
     private fun saveCategories() {
         if (categories.isEmpty()) {
-            Toast.makeText(this, "暂无可保存的分类", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_categories_to_save_toast), Toast.LENGTH_SHORT).show()
             return
         }
         isSaving = true
@@ -276,7 +275,7 @@ class CategoryManageActivity : AppCompatActivity() {
                 runOnUiThread {
                     isSaving = false
                     App.getInstance().requestAutoWebDavUploadIfConfigured()
-                    Toast.makeText(this, "分类已保存", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.categories_saved_toast), Toast.LENGTH_SHORT).show()
                     baselineState = snapshot.map { it.id to it.name }
                     setResult(RESULT_OK)
                     finish()
@@ -285,7 +284,11 @@ class CategoryManageActivity : AppCompatActivity() {
                 e.printStackTrace()
                 runOnUiThread {
                     isSaving = false
-                    Toast.makeText(this, "保存失败: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.save_failed_toast, e.message),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -335,9 +338,9 @@ private fun CategoryManageScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text("菜谱分类", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.category_manage_title), fontWeight = FontWeight.SemiBold)
                             Text(
-                                text = "拖动排序，编辑后点右上角保存",
+                                text = stringResource(R.string.category_manage_subtitle),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
                             )
@@ -347,7 +350,7 @@ private fun CategoryManageScreen(
                         IconButton(onClick = onBack, enabled = !isSaving) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_back_gold),
-                                contentDescription = "返回",
+                                contentDescription = stringResource(R.string.common_back),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -356,7 +359,7 @@ private fun CategoryManageScreen(
                         IconButton(onClick = onSave, enabled = !isSaving) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_save_gold),
-                                contentDescription = "保存",
+                                contentDescription = stringResource(R.string.common_save),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -496,14 +499,14 @@ private fun CategoryItemRow(
         IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_edit_gold),
-                contentDescription = "编辑",
+                contentDescription = stringResource(R.string.content_desc_edit),
                 tint = MaterialTheme.colorScheme.secondary
             )
         }
         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_delete_gold),
-                contentDescription = "删除",
+                contentDescription = stringResource(R.string.content_desc_delete),
                 tint = MaterialTheme.colorScheme.secondary
             )
         }
@@ -515,7 +518,7 @@ private fun CategoryItemRow(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_sort_gold),
-                contentDescription = "拖动排序",
+                contentDescription = stringResource(R.string.content_desc_reorder),
                 tint = MaterialTheme.colorScheme.secondary
             )
         }
@@ -538,12 +541,12 @@ private fun AddCategoryRow(
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_add_gold),
-            contentDescription = "新增分类",
+            contentDescription = stringResource(R.string.content_desc_add_category),
             tint = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.size(20.dp)
         )
         Text(
-            text = "新增分类",
+            text = stringResource(R.string.add_category_title),
             color = MaterialTheme.colorScheme.secondary,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,

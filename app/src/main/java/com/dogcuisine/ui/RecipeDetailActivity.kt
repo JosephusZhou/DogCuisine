@@ -43,9 +43,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.dogcuisine.App
 import com.dogcuisine.R
 import com.dogcuisine.data.CategoryDao
@@ -75,7 +75,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     private var recipeId: Long = -1L
     private var recipeName by mutableStateOf("")
-    private var categoryName by mutableStateOf("未分类")
+    private var categoryName by mutableStateOf("")
     private var coverImagePath by mutableStateOf<String?>(null)
     private var ingredient by mutableStateOf(StepItem())
     private var isFavorite by mutableStateOf(false)
@@ -92,7 +92,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
         recipeId = intent.getLongExtra(EXTRA_RECIPE_ID, -1L)
         if (recipeId <= 0L) {
-            Toast.makeText(this, "无效的菜谱", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.recipe_invalid_toast), Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -114,7 +114,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
                 val path = previewImagePath
                 if (!path.isNullOrEmpty()) {
-                    ImagePreviewDialog(path = path, onDismiss = { previewImagePath = null })
+                    ImagePreviewDialog(imagePath = path, onDismiss = { previewImagePath = null })
                 }
             }
         }
@@ -144,7 +144,7 @@ class RecipeDetailActivity : AppCompatActivity() {
             }
             runOnUiThread {
                 if (entity == null) {
-                    Toast.makeText(this, "未找到菜谱", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.recipe_not_found_toast), Toast.LENGTH_SHORT).show()
                     finish()
                     return@runOnUiThread
                 }
@@ -155,7 +155,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     private fun bindRecipe(entity: RecipeEntity, category: String?) {
         recipeName = entity.name ?: ""
-        categoryName = if (category.isNullOrEmpty()) "未分类" else category
+        categoryName = if (category.isNullOrEmpty()) getString(R.string.category_default) else category
         coverImagePath = entity.coverImagePath
         isFavorite = entity.isFavorite == 1
         ingredient = parseIngredient(entity.ingredientJson)
@@ -223,12 +223,12 @@ private fun RecipeDetailScreen(
             containerColor = DogCuisineColors.Transparent,
             topBar = {
                 TopAppBar(
-                    title = { Text(text = "菜谱详情", fontWeight = FontWeight.SemiBold) },
+                    title = { Text(text = stringResource(R.string.recipe_detail_title), fontWeight = FontWeight.SemiBold) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_back_gold),
-                                contentDescription = "返回",
+                                contentDescription = stringResource(R.string.common_back),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -243,14 +243,14 @@ private fun RecipeDetailScreen(
                                         R.drawable.ic_favorite_border_gold
                                     }
                                 ),
-                                contentDescription = "收藏",
+                                contentDescription = stringResource(R.string.recipe_favorite_desc),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                         IconButton(onClick = onEdit) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_edit_gold),
-                                contentDescription = "修改",
+                                contentDescription = stringResource(R.string.recipe_edit_desc),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -294,7 +294,7 @@ private fun RecipeDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "食材",
+                    text = stringResource(R.string.label_ingredient),
                     style = MaterialTheme.typography.titleMedium,
                     color = DogCuisineColors.TextPrimary,
                     fontWeight = FontWeight.Bold
@@ -308,7 +308,7 @@ private fun RecipeDetailScreen(
                 )
 
                 Text(
-                    text = "步骤",
+                    text = stringResource(R.string.label_steps),
                     style = MaterialTheme.typography.titleMedium,
                     color = DogCuisineColors.TextPrimary,
                     fontWeight = FontWeight.Bold,
@@ -317,7 +317,7 @@ private fun RecipeDetailScreen(
 
                 if (steps.isEmpty()) {
                     Text(
-                        text = "暂无步骤",
+                        text = stringResource(R.string.recipe_no_steps),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
@@ -396,7 +396,7 @@ private fun IngredientCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = if (hasText) text else "暂无食材",
+                text = if (hasText) text else stringResource(R.string.recipe_no_ingredient),
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (hasText) DogCuisineColors.TextPrimary else DogCuisineColors.TextPlaceholder
             )
@@ -438,7 +438,7 @@ private fun StepCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = "步骤 ${index + 1}",
+                text = stringResource(R.string.step_title, index + 1),
                 style = MaterialTheme.typography.titleSmall,
                 color = DogCuisineColors.TextPrimary,
                 fontWeight = FontWeight.Bold
@@ -492,38 +492,4 @@ private fun FullWidthRatioImage(
         fallback = fallbackPainter,
         modifier = modifier.clickable(onClick = onClick)
     )
-}
-
-@Composable
-private fun ImagePreviewDialog(
-    path: String,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
-    val model = remember(path) { File(path).takeIf { it.exists() } }
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(DogCuisineColors.Scrim)
-                .clickable(onClick = onDismiss),
-            contentAlignment = Alignment.Center
-        ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(model)
-                    .crossfade(true)
-                    .build(),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                placeholder = fallbackPainter,
-                error = fallbackPainter,
-                fallback = fallbackPainter
-            )
-        }
-    }
 }

@@ -50,6 +50,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
@@ -272,7 +273,7 @@ private fun SearchTopBar(
             IconButton(onClick = onBack) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_back_gold),
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.common_back),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -280,7 +281,7 @@ private fun SearchTopBar(
         actions = {
             TextButton(onClick = onCancel) {
                 Text(
-                    text = "取消",
+                    text = stringResource(R.string.common_cancel),
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -325,7 +326,7 @@ private fun SearchKeywordField(
             ) {
                 if (value.isEmpty()) {
                     Text(
-                        text = "搜索菜谱",
+                        text = stringResource(R.string.search_hint),
                         color = DogCuisineColors.TextPlaceholder,
                         fontSize = 15.sp,
                         lineHeight = 20.sp
@@ -415,13 +416,13 @@ private fun EmptySearchState() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "未找到匹配菜谱",
+            text = stringResource(R.string.search_empty_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "换个关键词试试",
+            text = stringResource(R.string.search_empty_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

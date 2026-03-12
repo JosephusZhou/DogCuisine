@@ -9,6 +9,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.res.stringResource
+import com.dogcuisine.R
 
 @Composable
 fun AppAlertDialog(
@@ -17,7 +19,7 @@ fun AppAlertDialog(
     message: String,
     confirmText: String,
     onConfirm: () -> Unit,
-    dismissText: String? = "取消",
+    dismissText: String? = stringResource(R.string.common_cancel),
     onDismiss: () -> Unit = onDismissRequest
 ) {
     val actionColor = MaterialTheme.colorScheme.secondary
@@ -55,8 +57,8 @@ fun AppTextInputDialog(
     value: String,
     onValueChange: (String) -> Unit,
     hint: String,
-    confirmText: String = "确定",
-    dismissText: String = "取消",
+    confirmText: String = stringResource(R.string.common_confirm),
+    dismissText: String = stringResource(R.string.common_cancel),
     onConfirm: () -> Unit,
     onDismiss: () -> Unit = onDismissRequest
 ) {

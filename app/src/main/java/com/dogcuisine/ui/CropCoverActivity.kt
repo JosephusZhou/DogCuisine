@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -78,13 +79,13 @@ class CropCoverActivity : AppCompatActivity() {
 
         val raw = intent.getStringExtra(EXTRA_SOURCE_URI)
         if (raw.isNullOrBlank()) {
-            Toast.makeText(this, "图片无效", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.crop_invalid_image_toast), Toast.LENGTH_SHORT).show()
             finish()
             return
         }
         bitmap = loadBitmap(Uri.parse(raw))
         if (bitmap == null) {
-            Toast.makeText(this, "读取图片失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.crop_load_failed_toast), Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -216,7 +217,7 @@ class CropCoverActivity : AppCompatActivity() {
             setResult(RESULT_OK, result)
             finish()
         } catch (_: Exception) {
-            Toast.makeText(this, "裁剪失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.crop_failed_toast), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -300,12 +301,12 @@ private fun CropCoverScreen(
         containerColor = DogCuisineColors.CropSurface,
         topBar = {
             TopAppBar(
-                title = { Text(text = "裁剪封面", fontWeight = FontWeight.SemiBold) },
+                title = { Text(text = stringResource(R.string.crop_cover_title), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_gold),
-                            contentDescription = "返回",
+                            contentDescription = stringResource(R.string.common_back),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -313,7 +314,7 @@ private fun CropCoverScreen(
                 actions = {
                     TextButton(onClick = onDone) {
                         Text(
-                            text = "完成",
+                            text = stringResource(R.string.common_done),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.SemiBold
                         )

@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -60,7 +61,7 @@ class WebDavSyncActivity : AppCompatActivity() {
     private var webDavUser by mutableStateOf("")
     private var webDavPass by mutableStateOf("")
     private var passwordVisible by mutableStateOf(false)
-    private var syncStatus by mutableStateOf("说明：同步会包含数据库和所有图片。")
+    private var syncStatus by mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,6 +80,9 @@ class WebDavSyncActivity : AppCompatActivity() {
         ioExecutor = app.ioExecutor()
         loadingDialogHelper = LoadingDialogHelper(this)
         loadConfig()
+        if (syncStatus.isBlank()) {
+            syncStatus = getString(R.string.webdav_sync_info)
+        }
 
         setContent {
             DogCuisineTheme {
@@ -107,30 +111,34 @@ class WebDavSyncActivity : AppCompatActivity() {
 
     private fun startUpload() {
         if (App.getInstance().isAutoWebDavUploading()) {
-            Toast.makeText(this, "正在后台上传中，不可操作", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.webdav_uploading_background_toast), Toast.LENGTH_SHORT).show()
             return
         }
         val url = webDavUrl.trim()
         val user = webDavUser.trim()
         val pass = webDavPass
         if (url.isEmpty()) {
-            Toast.makeText(this, "请填写 WebDAV URL", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.webdav_url_required_toast), Toast.LENGTH_SHORT).show()
             return
         }
         saveConfig(url, user, pass)
-        setLoading(true, "正在上传数据库和图片到 WebDAV...")
+        setLoading(true, getString(R.string.webdav_uploading))
         ioExecutor.execute {
             try {
                 WebDavSyncManager(this).upload(url, user, pass)
                 runOnUiThread {
-                    setLoading(false, "上传完成")
-                    Toast.makeText(this, "上传成功", Toast.LENGTH_SHORT).show()
+                    setLoading(false, getString(R.string.webdav_upload_done))
+                    Toast.makeText(this, getString(R.string.webdav_upload_success), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread {
-                    setLoading(false, "上传失败")
-                    Toast.makeText(this, "上传失败: ${e.message}", Toast.LENGTH_LONG).show()
+                    setLoading(false, getString(R.string.webdav_upload_failed))
+                    Toast.makeText(
+                        this,
+                        getString(R.string.webdav_upload_failed_with_reason, e.message),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -138,32 +146,36 @@ class WebDavSyncActivity : AppCompatActivity() {
 
     private fun startDownload() {
         if (App.getInstance().isAutoWebDavUploading()) {
-            Toast.makeText(this, "正在后台上传中，不可操作", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.webdav_uploading_background_toast), Toast.LENGTH_SHORT).show()
             return
         }
         val url = webDavUrl.trim()
         val user = webDavUser.trim()
         val pass = webDavPass
         if (url.isEmpty()) {
-            Toast.makeText(this, "请填写 WebDAV URL", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.webdav_url_required_toast), Toast.LENGTH_SHORT).show()
             return
         }
         saveConfig(url, user, pass)
-        setLoading(true, "正在从 WebDAV 恢复数据库和图片...")
+        setLoading(true, getString(R.string.webdav_restoring))
         ioExecutor.execute {
             try {
                 WebDavSyncManager(this).downloadAndRestore(url, user, pass)
                 runOnUiThread {
-                    setLoading(false, "恢复完成")
+                    setLoading(false, getString(R.string.webdav_restore_done))
                     setResult(RESULT_OK)
-                    Toast.makeText(this, "恢复成功", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.webdav_restore_success), Toast.LENGTH_SHORT).show()
                     finish()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread {
-                    setLoading(false, "恢复失败")
-                    Toast.makeText(this, "恢复失败: ${e.message}", Toast.LENGTH_LONG).show()
+                    setLoading(false, getString(R.string.webdav_restore_failed))
+                    Toast.makeText(
+                        this,
+                        getString(R.string.webdav_restore_failed_with_reason, e.message),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -235,9 +247,9 @@ private fun WebDavSyncScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text("WebDAV 同步", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.webdav_title), fontWeight = FontWeight.SemiBold)
                             Text(
-                                text = "上传或恢复数据库与图片",
+                                text = stringResource(R.string.webdav_subtitle),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
                             )
@@ -247,7 +259,7 @@ private fun WebDavSyncScreen(
                         IconButton(onClick = onBack) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_back_gold),
-                                contentDescription = "返回",
+                                contentDescription = stringResource(R.string.common_back),
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -272,8 +284,8 @@ private fun WebDavSyncScreen(
                     onValueChange = onUrlChange,
                     enabled = !isSyncing,
                     singleLine = true,
-                    label = { Text("WebDAV 目录 URL") },
-                    placeholder = { Text("例如：https://example.com/dav") },
+                    label = { Text(stringResource(R.string.webdav_url_label)) },
+                    placeholder = { Text(stringResource(R.string.webdav_url_placeholder)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -281,7 +293,7 @@ private fun WebDavSyncScreen(
                     onValueChange = onUserChange,
                     enabled = !isSyncing,
                     singleLine = true,
-                    label = { Text("用户名") },
+                    label = { Text(stringResource(R.string.webdav_username_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -289,7 +301,7 @@ private fun WebDavSyncScreen(
                     onValueChange = onPassChange,
                     enabled = !isSyncing,
                     singleLine = true,
-                    label = { Text("密码") },
+                    label = { Text(stringResource(R.string.webdav_password_label)) },
                     visualTransformation = if (passwordVisible) {
                         VisualTransformation.None
                     } else {
@@ -303,7 +315,13 @@ private fun WebDavSyncScreen(
                                 contentColor = MaterialTheme.colorScheme.secondary
                             )
                         ) {
-                            Text(if (passwordVisible) "隐藏" else "显示")
+                            Text(
+                                if (passwordVisible) {
+                                    stringResource(R.string.common_hide)
+                                } else {
+                                    stringResource(R.string.common_show)
+                                }
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -321,7 +339,7 @@ private fun WebDavSyncScreen(
                             contentColor = MaterialTheme.colorScheme.secondary
                         )
                     ) {
-                        Text("上传到 WebDAV")
+                        Text(stringResource(R.string.webdav_upload_button))
                     }
                     OutlinedButton(
                         onClick = onDownloadClick,
@@ -331,7 +349,7 @@ private fun WebDavSyncScreen(
                             contentColor = MaterialTheme.colorScheme.secondary
                         )
                     ) {
-                        Text("从 WebDAV 恢复")
+                        Text(stringResource(R.string.webdav_restore_button))
                     }
                 }
 
