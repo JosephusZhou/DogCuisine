@@ -76,8 +76,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
 import java.lang.reflect.Type
-import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.concurrent.ExecutorService
 
 class MainActivity : AppCompatActivity() {
@@ -95,7 +93,6 @@ class MainActivity : AppCompatActivity() {
     private val categories = mutableStateListOf<CategoryEntity>()
     private val recipes = mutableStateListOf<RecipeEntity>()
     private val gson = Gson()
-    private val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA)
 
     private var selectedCategoryId by mutableStateOf<Long?>(null)
     private var totalRecipeCount by mutableStateOf(0L)
@@ -137,7 +134,6 @@ class MainActivity : AppCompatActivity() {
                     categories = categories,
                     selectedCategoryId = selectedCategoryId,
                     recipes = recipes,
-                    formatUpdatedAt = { formatter.format(it) },
                     overflowExpanded = overflowExpanded,
                     onOverflowExpandedChange = { overflowExpanded = it },
                     onCategorySelected = { onCategorySelected(it) },
@@ -309,7 +305,6 @@ private fun MainScreen(
     categories: List<CategoryEntity>,
     selectedCategoryId: Long?,
     recipes: List<RecipeEntity>,
-    formatUpdatedAt: (Long) -> String,
     overflowExpanded: Boolean,
     onOverflowExpandedChange: (Boolean) -> Unit,
     onCategorySelected: (CategoryEntity) -> Unit,
@@ -365,7 +360,6 @@ private fun MainScreen(
                     listState = recipeListState,
                     selectedCategoryId = selectedCategoryId,
                     recipes = recipes,
-                    formatUpdatedAt = formatUpdatedAt,
                     onRecipeClick = onRecipeClick,
                     onRecipeLongClick = onRecipeLongClick
                 )
@@ -467,12 +461,6 @@ private fun CategoryPane(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Text(
-            text = stringResource(R.string.label_category),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 6.dp)
-        )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -514,7 +502,6 @@ private fun RecipePane(
     listState: LazyListState,
     selectedCategoryId: Long?,
     recipes: List<RecipeEntity>,
-    formatUpdatedAt: (Long) -> String,
     onRecipeClick: (RecipeEntity) -> Unit,
     onRecipeLongClick: (RecipeEntity) -> Unit
 ) {
@@ -539,7 +526,6 @@ private fun RecipePane(
                 items(items = recipes, key = { it.id ?: it.hashCode().toLong() }) { recipe ->
                     RecipeCard(
                         recipe = recipe,
-                        formattedTime = formatUpdatedAt(recipe.updatedAt),
                         onClick = { onRecipeClick(recipe) },
                         onLongClick = { onRecipeLongClick(recipe) }
                     )
@@ -553,7 +539,6 @@ private fun RecipePane(
 @Composable
 private fun RecipeCard(
     recipe: RecipeEntity,
-    formattedTime: String,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -570,7 +555,7 @@ private fun RecipeCard(
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         RecipeThumbnail(
             imagePath = recipe.coverImagePath,
@@ -579,7 +564,9 @@ private fun RecipeCard(
                 .clip(RoundedCornerShape(10.dp))
         )
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .padding(top = 2.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
@@ -587,11 +574,6 @@ private fun RecipeCard(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = stringResource(R.string.last_edited_format, formattedTime),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

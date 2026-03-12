@@ -515,17 +515,20 @@ class AddRecipeActivity : AppCompatActivity() {
     private fun loadCategoriesForDropdown() {
         ioExecutor.execute {
             val all = categoryDao.getAll() ?: emptyList()
-            var nextSelected = selectedCategoryId
-            if (nextSelected == null && editingId <= 0L && all.isNotEmpty()) {
-                nextSelected = all.first().id
-            }
-            if (nextSelected != null && all.none { it.id == nextSelected }) {
-                nextSelected = all.firstOrNull()?.id
-            }
             runOnUiThread {
                 categoryOptions.clear()
                 categoryOptions.addAll(all)
-                selectedCategoryId = nextSelected
+                val currentSelected = selectedCategoryId
+                var nextSelected = currentSelected
+                if (nextSelected == null && editingId <= 0L && all.isNotEmpty()) {
+                    nextSelected = all.first().id
+                }
+                if (nextSelected != null && all.none { it.id == nextSelected }) {
+                    nextSelected = all.firstOrNull()?.id
+                }
+                if (nextSelected != currentSelected) {
+                    selectedCategoryId = nextSelected
+                }
             }
         }
     }
@@ -1115,6 +1118,7 @@ private fun CategorySelector(
             onDismissRequest = { expanded = false }
         ) {
             categoryOptions.forEach { category ->
+                val selected = category.id == selectedCategoryId
                 androidx.compose.material3.DropdownMenuItem(
                     text = {
                         Text(
@@ -1123,6 +1127,9 @@ private fun CategorySelector(
                             overflow = TextOverflow.Ellipsis
                         )
                     },
+                    modifier = Modifier.background(
+                        if (selected) MaterialTheme.colorScheme.secondaryContainer else ComposeColor.Transparent
+                    ),
                     onClick = {
                         expanded = false
                         onCategorySelected(category.id)
