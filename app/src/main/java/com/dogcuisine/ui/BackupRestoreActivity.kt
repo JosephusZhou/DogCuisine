@@ -224,7 +224,7 @@ class BackupRestoreActivity : AppCompatActivity() {
             copyDir(imagesSrc, imagesDest)
         }
 
-        AppDatabase.resetInstance(this)
+        App.getInstance().reloadDatabase()
     }
 
     private fun zipFile(zos: ZipOutputStream, file: File, entryName: String) {

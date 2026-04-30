@@ -144,6 +144,7 @@ class AddRecipeActivity : AppCompatActivity() {
     private var coverPath by mutableStateOf<String?>(null)
     private var selectedCategoryId by mutableStateOf<Long?>(null)
     private var editingFavorite = 0
+    private var isSaving by mutableStateOf(false)
 
     private var ingredientText by mutableStateOf("")
     private val ingredientImages = mutableStateListOf<String>()
@@ -204,6 +205,7 @@ class AddRecipeActivity : AppCompatActivity() {
                     steps = steps,
                     stepKeys = stepStableKeys,
                     scrollToBottomToken = scrollToBottomToken,
+                    isSaving = isSaving,
                     onBack = { finish() },
                     onSave = { saveRecipe() },
                     onPickCover = { pickCover() },
@@ -409,11 +411,13 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 
     private fun saveRecipe() {
+        if (isSaving) return
         val name = recipeName.trim()
         if (name.isEmpty()) {
             Toast.makeText(this, getString(R.string.recipe_name_required_toast), Toast.LENGTH_SHORT).show()
             return
         }
+        isSaving = true
 
         val now = System.currentTimeMillis()
         val ingredientJson = gson.toJson(
@@ -425,48 +429,62 @@ class AddRecipeActivity : AppCompatActivity() {
         val coverPathSnapshot = coverPath
 
         ioExecutor.execute {
-            var categoryId = selectedCategoryId
-            if (categoryId == null) {
-                categoryId = fetchDefaultCategoryId()
-            }
+            try {
+                var categoryId = selectedCategoryId
+                if (categoryId == null) {
+                    categoryId = fetchDefaultCategoryId()
+                }
 
-            val entity = if (editingIdSnapshot > 0L) {
-                RecipeEntity(
-                    editingIdSnapshot,
-                    name,
-                    if (existingCreatedAtSnapshot > 0L) existingCreatedAtSnapshot else now,
-                    now,
-                    "",
-                    coverPathSnapshot,
-                    stepsJson,
-                    ingredientJson,
-                    categoryId,
-                    editingFavorite
-                )
-            } else {
-                RecipeEntity(
-                    null,
-                    name,
-                    now,
-                    now,
-                    "",
-                    coverPathSnapshot,
-                    stepsJson,
-                    ingredientJson,
-                    categoryId,
-                    0
-                )
-            }
-            recipeDao.insert(entity)
-
-            val levelUpName = if (editingIdSnapshot > 0L) null else checkLevelUpIfNeeded()
-            runOnUiThread {
-                App.getInstance().requestAutoWebDavUploadIfConfigured()
-                Toast.makeText(this, getString(R.string.save_success_toast), Toast.LENGTH_SHORT).show()
-                if (!levelUpName.isNullOrEmpty()) {
-                    showLevelUpDialog(levelUpName)
+                val entity = if (editingIdSnapshot > 0L) {
+                    RecipeEntity(
+                        editingIdSnapshot,
+                        name,
+                        if (existingCreatedAtSnapshot > 0L) existingCreatedAtSnapshot else now,
+                        now,
+                        "",
+                        coverPathSnapshot,
+                        stepsJson,
+                        ingredientJson,
+                        categoryId,
+                        editingFavorite
+                    )
                 } else {
-                    finishAfterSave()
+                    RecipeEntity(
+                        null,
+                        name,
+                        now,
+                        now,
+                        "",
+                        coverPathSnapshot,
+                        stepsJson,
+                        ingredientJson,
+                        categoryId,
+                        0
+                    )
+                }
+                App.getInstance().getDatabase().recipeDao().insert(entity)
+
+                val levelUpName = if (editingIdSnapshot > 0L) null else checkLevelUpIfNeeded()
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    App.getInstance().requestAutoWebDavUploadIfConfigured()
+                    Toast.makeText(this, getString(R.string.save_success_toast), Toast.LENGTH_SHORT).show()
+                    if (!levelUpName.isNullOrEmpty()) {
+                        showLevelUpDialog(levelUpName)
+                    } else {
+                        finishAfterSave()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    isSaving = false
+                    Toast.makeText(
+                        this,
+                        getString(R.string.save_failed_toast, e.message ?: e.javaClass.simpleName),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -859,6 +877,7 @@ private fun AddRecipeScreen(
     steps: List<StepItem>,
     stepKeys: List<Long>,
     scrollToBottomToken: Int,
+    isSaving: Boolean,
     onBack: () -> Unit,
     onSave: () -> Unit,
     onPickCover: () -> Unit,
@@ -906,7 +925,7 @@ private fun AddRecipeScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = onSave) {
+                        IconButton(onClick = onSave, enabled = !isSaving) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_save_gold),
                                 contentDescription = stringResource(R.string.common_save),
