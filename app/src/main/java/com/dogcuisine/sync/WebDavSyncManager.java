@@ -490,6 +490,81 @@ public class WebDavSyncManager {
         return childPath.equals(parentPath) || childPath.startsWith(parentPath + File.separator);
     }
 
+    public static class VerifyResult {
+        public boolean consistent;
+        public List<String> localOnlyFiles = new ArrayList<>();
+        public List<String> remoteOnlyFiles = new ArrayList<>();
+        public List<String> modifiedFiles = new ArrayList<>();
+        public String suggestion = "";
+    }
+
+    @NonNull
+    public VerifyResult verify(@NonNull String baseUrl, @Nullable String username, @Nullable String password) throws Exception {
+        d("verify start, baseUrl=" + baseUrl);
+        VerifyResult result = new VerifyResult();
+
+        File workspace = new File(context.getCacheDir(), "sync_verify");
+        if (!workspace.exists()) workspace.mkdirs();
+
+        File dbSnapshotDir = new File(workspace, "db_snapshot");
+        recreateDir(dbSnapshotDir);
+        snapshotDatabaseFiles(dbSnapshotDir);
+
+        List<LocalFileEntry> localFiles = buildLocalFileEntries(dbSnapshotDir);
+        Map<String, LocalFileEntry> localMap = new HashMap<>();
+        for (LocalFileEntry file : localFiles) {
+            localMap.put(file.path, file);
+        }
+
+        SyncManifest remoteManifest = downloadManifestIfExists(baseUrl, username, password);
+        if (remoteManifest == null) {
+            d("manifest not found during verify");
+            result.consistent = false;
+            result.suggestion = context.getString(R.string.webdav_verify_no_manifest);
+            for (LocalFileEntry local : localFiles) {
+                result.localOnlyFiles.add(local.path);
+            }
+            return result;
+        }
+
+        Map<String, ManifestFile> remoteMap = toManifestMap(remoteManifest);
+
+        for (LocalFileEntry local : localFiles) {
+            ManifestFile remote = remoteMap.get(local.path);
+            if (remote == null) {
+                result.localOnlyFiles.add(local.path);
+            } else if (!local.sha256.equals(remote.sha256) || local.size != remote.size) {
+                result.modifiedFiles.add(local.path);
+            }
+        }
+
+        for (ManifestFile remote : remoteMap.values()) {
+            if (!localMap.containsKey(remote.path)) {
+                result.remoteOnlyFiles.add(remote.path);
+            }
+        }
+
+        result.consistent = result.localOnlyFiles.isEmpty()
+                && result.remoteOnlyFiles.isEmpty()
+                && result.modifiedFiles.isEmpty();
+
+        if (result.consistent) {
+            result.suggestion = context.getString(R.string.webdav_verify_consistent);
+        } else if (result.remoteOnlyFiles.isEmpty() && result.modifiedFiles.isEmpty()) {
+            result.suggestion = context.getString(R.string.webdav_verify_suggest_upload);
+        } else if (result.localOnlyFiles.isEmpty() && result.modifiedFiles.isEmpty()) {
+            result.suggestion = context.getString(R.string.webdav_verify_suggest_download);
+        } else {
+            result.suggestion = context.getString(R.string.webdav_verify_suggest_manual);
+        }
+
+        d("verify done, consistent=" + result.consistent
+                + " localOnly=" + result.localOnlyFiles.size()
+                + " remoteOnly=" + result.remoteOnlyFiles.size()
+                + " modified=" + result.modifiedFiles.size());
+        return result;
+    }
+
     private static class LocalFileEntry {
         String path;
         String sha256;

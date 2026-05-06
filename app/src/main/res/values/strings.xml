@@ -27,7 +27,7 @@
     <string name="category_empty">暂无分类</string>
 
     <string name="main_browse_tip">按分类浏览，长按卡片删除</string>
-    <string name="menu_sync">同步</string>
+    <string name="menu_sync">远程同步</string>
     <string name="menu_backup_restore">备份与恢复</string>
     <string name="label_category">分类</string>
     <string name="last_edited_format">最近编辑：%1$s</string>
@@ -95,6 +95,23 @@
     <string name="webdav_upload_http_failed">WebDAV 上传失败，HTTP %1$d - %2$s</string>
     <string name="webdav_download_http_failed">WebDAV 下载失败，HTTP %1$d - %2$s</string>
     <string name="webdav_delete_http_failed">WebDAV 删除失败，HTTP %1$d - %2$s</string>
+
+    <string name="webdav_verify_button">校验数据一致性</string>
+    <string name="webdav_verifying">正在校验本地与远程数据…</string>
+    <string name="webdav_verify_done">校验完成</string>
+    <string name="webdav_verify_consistent">校验完成，数据一致 ✓</string>
+    <string name="webdav_verify_inconsistent">数据不一致</string>
+    <string name="webdav_verify_local_only">本地多出 %1$d 个文件（远程缺失）</string>
+    <string name="webdav_verify_remote_only">远程多出 %1$d 个文件（本地缺失）</string>
+    <string name="webdav_verify_modified">%1$d 个文件内容不同</string>
+    <string name="webdav_verify_suggest_upload">建议：上传本地数据到远程</string>
+    <string name="webdav_verify_suggest_download">建议：从远程恢复数据到本地</string>
+    <string name="webdav_verify_suggest_manual">建议：手动检查后选择上传或下载</string>
+    <string name="webdav_verify_no_manifest">远程无备份数据，请先执行一次上传</string>
+    <string name="webdav_verify_failed">校验失败</string>
+    <string name="webdav_verify_failed_with_reason">校验失败: %1$s</string>
+    <string name="webdav_verify_db_label">数据库</string>
+    <string name="webdav_verify_image_label">图片</string>
 
     <string name="crop_invalid_image_toast">图片无效</string>
     <string name="crop_load_failed_toast">读取图片失败</string>
