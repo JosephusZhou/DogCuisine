@@ -41,20 +41,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -62,8 +60,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.dogcuisine.App
 import com.dogcuisine.R
 import com.dogcuisine.data.AppDatabase
@@ -72,8 +71,6 @@ import com.dogcuisine.data.RecipeEntity
 import com.dogcuisine.data.StepItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import java.io.File
 import java.lang.reflect.Type
 import java.util.concurrent.ExecutorService
@@ -166,31 +163,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openSearch() {
-        startActivity(Intent(this, SearchRecipeActivity::class.java))
+        startActivity(SearchRecipeActivity.createIntent(this))
         overridePendingTransition(0, 0)
     }
 
     private fun openCategoryManage() {
-        categoryManageLauncher.launch(Intent(this, CategoryManageActivity::class.java))
+        categoryManageLauncher.launch(CategoryManageActivity.createIntent(this))
     }
 
     private fun openAddRecipe() {
-        startActivity(Intent(this, AddRecipeActivity::class.java))
+        startActivity(AddRecipeActivity.createIntent(this))
     }
 
     private fun openSync() {
-        syncLauncher.launch(Intent(this, WebDavSyncActivity::class.java))
+        syncLauncher.launch(WebDavSyncActivity.createIntent(this))
     }
 
     private fun openBackupRestore() {
-        syncLauncher.launch(Intent(this, BackupRestoreActivity::class.java))
+        syncLauncher.launch(BackupRestoreActivity.createIntent(this))
     }
 
     private fun openRecipeDetail(recipe: RecipeEntity) {
         val id = recipe.id ?: return
-        val intent = Intent(this, RecipeDetailActivity::class.java)
-        intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_ID, id)
-        startActivity(intent)
+        startActivity(RecipeDetailActivity.createIntent(this, id))
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 

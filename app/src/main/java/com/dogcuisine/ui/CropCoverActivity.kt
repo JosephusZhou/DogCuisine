@@ -1,5 +1,6 @@
 package com.dogcuisine.ui
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -37,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -49,16 +49,21 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.dogcuisine.R
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
 import kotlin.math.max
 import kotlin.math.min
+import androidx.compose.ui.graphics.Color as ComposeColor
 
 class CropCoverActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_SOURCE_URI = "source_uri"
+        private const val EXTRA_SOURCE_URI = "source_uri"
         const val EXTRA_CROPPED_URI = "cropped_uri"
         private const val OUTPUT_SIZE = 1080
+
+        fun createIntent(context: Context, sourceUri: String): Intent {
+            return Intent(context, CropCoverActivity::class.java)
+                .putExtra(EXTRA_SOURCE_URI, sourceUri)
+        }
     }
 
     private var bitmap: Bitmap? = null

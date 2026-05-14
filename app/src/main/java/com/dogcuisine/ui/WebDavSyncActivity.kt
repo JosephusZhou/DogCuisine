@@ -1,8 +1,11 @@
 package com.dogcuisine.ui
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,10 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,9 +52,14 @@ import com.dogcuisine.R
 import com.dogcuisine.sync.WebDavSyncConfig
 import com.dogcuisine.sync.WebDavSyncManager
 import java.util.concurrent.ExecutorService
-import androidx.activity.compose.setContent
 
 class WebDavSyncActivity : AppCompatActivity() {
+
+    companion object {
+        fun createIntent(context: Context): Intent {
+            return Intent(context, WebDavSyncActivity::class.java)
+        }
+    }
 
     private lateinit var ioExecutor: ExecutorService
     private lateinit var loadingDialogHelper: LoadingDialogHelper

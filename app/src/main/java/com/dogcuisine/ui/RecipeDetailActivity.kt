@@ -1,5 +1,6 @@
 package com.dogcuisine.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -31,21 +32,20 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.dogcuisine.App
 import com.dogcuisine.R
 import com.dogcuisine.data.CategoryDao
@@ -54,8 +54,6 @@ import com.dogcuisine.data.RecipeEntity
 import com.dogcuisine.data.StepItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import java.io.File
 import java.lang.reflect.Type
 import java.util.concurrent.ExecutorService
@@ -63,7 +61,12 @@ import java.util.concurrent.ExecutorService
 class RecipeDetailActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_RECIPE_ID = "recipe_id"
+        private const val EXTRA_RECIPE_ID = "recipe_id"
+
+        fun createIntent(context: Context, recipeId: Long): Intent {
+            return Intent(context, RecipeDetailActivity::class.java)
+                .putExtra(EXTRA_RECIPE_ID, recipeId)
+        }
     }
 
     private lateinit var ioExecutor: ExecutorService
@@ -175,9 +178,7 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun openEditPage() {
-        val intent = Intent(this, AddRecipeActivity::class.java)
-        intent.putExtra(AddRecipeActivity.EXTRA_RECIPE_ID, recipeId)
-        startActivity(intent)
+        startActivity(AddRecipeActivity.createIntent(this, recipeId))
     }
 
     private fun parseSteps(json: String?): List<StepItem> {
