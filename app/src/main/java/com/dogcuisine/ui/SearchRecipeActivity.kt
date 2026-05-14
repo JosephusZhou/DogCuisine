@@ -111,7 +111,7 @@ class SearchRecipeActivity : AppCompatActivity() {
                     onKeywordChange = { onKeywordChanged(it) },
                     onBack = { finishWithoutAnimation() },
                     onCancel = { finishWithoutAnimation() },
-                    onRecipeClick = { openRecipeDetailAndClose(it) }
+                    onRecipeClick = { openRecipeDetail(it) }
                 )
             }
         }
@@ -150,12 +150,11 @@ class SearchRecipeActivity : AppCompatActivity() {
         }
     }
 
-    private fun openRecipeDetailAndClose(recipe: RecipeEntity) {
+    private fun openRecipeDetail(recipe: RecipeEntity) {
         val recipeId = recipe.id ?: return
         val intent = Intent(this, RecipeDetailActivity::class.java)
         intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE_ID, recipeId)
         startActivity(intent)
-        finishWithoutAnimation()
     }
 
     private fun finishWithoutAnimation() {
