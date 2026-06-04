@@ -1,13 +1,17 @@
 package com.dogcuisine.ui
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +87,7 @@ class RecipeDetailActivity : AppCompatActivity() {
     private var ingredient by mutableStateOf(StepItem())
     private var isFavorite by mutableStateOf(false)
     private var previewImagePath by mutableStateOf<String?>(null)
+    private var saveImagePath by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,12 +117,29 @@ class RecipeDetailActivity : AppCompatActivity() {
                     onBack = { finish() },
                     onToggleFavorite = { toggleFavorite() },
                     onEdit = { openEditPage() },
-                    onImageClick = { path -> previewImagePath = path }
+                    onImageClick = { path -> previewImagePath = path },
+                    onImageLongClick = { path -> saveImagePath = path }
                 )
 
                 val path = previewImagePath
                 if (!path.isNullOrEmpty()) {
                     ImagePreviewDialog(imagePath = path, onDismiss = { previewImagePath = null })
+                }
+
+                val savePath = saveImagePath
+                if (!savePath.isNullOrEmpty()) {
+                    AppAlertDialog(
+                        onDismissRequest = { saveImagePath = null },
+                        title = getString(R.string.save_image_title),
+                        message = getString(R.string.save_image_message),
+                        confirmText = getString(R.string.common_confirm),
+                        dismissText = getString(R.string.common_cancel),
+                        onConfirm = {
+                            saveImagePath = null
+                            saveImageToGallery(savePath)
+                        },
+                        onDismiss = { saveImagePath = null }
+                    )
                 }
             }
         }
@@ -181,6 +203,56 @@ class RecipeDetailActivity : AppCompatActivity() {
         startActivity(AddRecipeActivity.createIntent(this, recipeId))
     }
 
+    private fun saveImageToGallery(imagePath: String) {
+        ioExecutor.execute {
+            try {
+                val sourceFile = File(imagePath)
+                if (!sourceFile.exists()) {
+                    runOnUiThread {
+                        Toast.makeText(this, getString(R.string.save_image_failed_toast, "文件不存在"), Toast.LENGTH_SHORT).show()
+                    }
+                    return@execute
+                }
+                val resolver = applicationContext.contentResolver
+                val mimeType = when (sourceFile.extension.lowercase()) {
+                    "png" -> "image/png"
+                    "webp" -> "image/webp"
+                    else -> "image/jpeg"
+                }
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, sourceFile.name)
+                    put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/DogCuisine")
+                        put(MediaStore.Images.Media.IS_PENDING, 1)
+                    }
+                }
+                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { output ->
+                        sourceFile.inputStream().use { input -> input.copyTo(output) }
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        contentValues.clear()
+                        contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        resolver.update(uri, contentValues, null, null)
+                    }
+                    runOnUiThread {
+                        Toast.makeText(this, getString(R.string.save_image_success_toast), Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this, getString(R.string.save_image_failed_toast, "无法创建文件"), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, getString(R.string.save_image_failed_toast, e.message ?: "未知错误"), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     private fun parseSteps(json: String?): List<StepItem> {
         if (json.isNullOrEmpty()) return emptyList()
         return try {
@@ -213,7 +285,8 @@ private fun RecipeDetailScreen(
     onBack: () -> Unit,
     onToggleFavorite: () -> Unit,
     onEdit: () -> Unit,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    onImageLongClick: (String) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -274,7 +347,9 @@ private fun RecipeDetailScreen(
                     imagePath = coverImagePath,
                     modifier = Modifier
                         .size(240.dp)
-                        .align(Alignment.CenterHorizontally)
+                        .align(Alignment.CenterHorizontally),
+                    onClick = { coverImagePath?.let { onImageClick(it) } },
+                    onLongClick = { coverImagePath?.let { onImageLongClick(it) } }
                 )
                 Text(
                     text = recipeName,
@@ -303,6 +378,7 @@ private fun RecipeDetailScreen(
                 IngredientCard(
                     ingredient = ingredient,
                     onImageClick = onImageClick,
+                    onImageLongClick = onImageLongClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp, bottom = 8.dp)
@@ -334,7 +410,8 @@ private fun RecipeDetailScreen(
                             StepCard(
                                 index = index,
                                 step = step,
-                                onImageClick = onImageClick
+                                onImageClick = onImageClick,
+                                onImageLongClick = onImageLongClick
                             )
                         }
                     }
@@ -345,10 +422,13 @@ private fun RecipeDetailScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LocalSquareCover(
     imagePath: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
@@ -358,8 +438,16 @@ private fun LocalSquareCover(
             ?.let(::File)
             ?.takeIf { it.exists() }
     }
+    val interactionModifier = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            onClick = { onClick?.invoke() },
+            onLongClick = { onLongClick?.invoke() }
+        )
+    } else {
+        Modifier
+    }
     Card(
-        modifier = modifier,
+        modifier = modifier.then(interactionModifier),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -382,6 +470,7 @@ private fun LocalSquareCover(
 private fun IngredientCard(
     ingredient: StepItem,
     onImageClick: (String) -> Unit,
+    onImageLongClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val text = ingredient.text?.trim().orEmpty()
@@ -412,7 +501,8 @@ private fun IngredientCard(
                         FullWidthRatioImage(
                             imagePath = path,
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = { onImageClick(path) }
+                            onClick = { onImageClick(path) },
+                            onLongClick = { onImageLongClick(path) }
                         )
                     }
                 }
@@ -425,7 +515,8 @@ private fun IngredientCard(
 private fun StepCard(
     index: Int,
     step: StepItem,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    onImageLongClick: (String) -> Unit
 ) {
     val stepText = step.text?.trim().orEmpty()
     val images = step.imagePaths ?: emptyList()
@@ -463,7 +554,8 @@ private fun StepCard(
                         FullWidthRatioImage(
                             imagePath = path,
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = { onImageClick(path) }
+                            onClick = { onImageClick(path) },
+                            onLongClick = { onImageLongClick(path) }
                         )
                     }
                 }
@@ -472,11 +564,13 @@ private fun StepCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FullWidthRatioImage(
     imagePath: String,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val fallbackPainter = painterResource(id = R.drawable.ic_launcher_foreground)
@@ -491,6 +585,9 @@ private fun FullWidthRatioImage(
         placeholder = fallbackPainter,
         error = fallbackPainter,
         fallback = fallbackPainter,
-        modifier = modifier.clickable(onClick = onClick)
+        modifier = modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
     )
 }

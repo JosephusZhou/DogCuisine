@@ -2,14 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-}
-
-def keyProperties = new Properties()
-def keyPropertiesFile = rootProject.file("key.properties")
-def hasReleaseSigning = keyPropertiesFile.exists()
-
-if (hasReleaseSigning) {
-    keyProperties.load(keyPropertiesFile.newInputStream())
+    alias(libs.plugins.android.signing)
 }
 
 android {
@@ -28,27 +21,13 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        if (hasReleaseSigning) {
-            release {
-                storeFile file(keyProperties.getProperty("storeFile"))
-                storePassword keyProperties.getProperty("storePassword")
-                keyAlias keyProperties.getProperty("keyAlias")
-                keyPassword keyProperties.getProperty("keyPassword")
-            }
-        }
-    }
-
     buildTypes {
-        debug {
-            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
-        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17

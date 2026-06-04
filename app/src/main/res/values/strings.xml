@@ -51,6 +51,10 @@
     <string name="recipe_edit_desc">修改</string>
     <string name="label_ingredient">食材</string>
     <string name="label_steps">步骤</string>
+    <string name="save_image_title">保存图片</string>
+    <string name="save_image_message">确定将此图片保存到相册吗？</string>
+    <string name="save_image_success_toast">图片已保存到相册</string>
+    <string name="save_image_failed_toast">保存图片失败: %1$s</string>
 
     <string name="edit_ingredient_title">编辑食材</string>
     <string name="edit_step_title">编辑步骤</string>
