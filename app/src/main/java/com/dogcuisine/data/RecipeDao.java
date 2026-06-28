@@ -28,6 +28,9 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE is_favorite = 1 ORDER BY updated_at DESC")
     List<RecipeEntity> getFavorites();
 
+    @Query("SELECT * FROM recipes WHERE rating = :rating ORDER BY updated_at DESC")
+    List<RecipeEntity> getByRating(int rating);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<RecipeEntity> recipes);
 
@@ -39,6 +42,9 @@ public interface RecipeDao {
 
     @Query("UPDATE recipes SET is_favorite = :favorite WHERE id = :id")
     void updateFavorite(long id, int favorite);
+
+    @Query("UPDATE recipes SET rating = :rating WHERE id = :id")
+    void updateRating(long id, int rating);
 
     @Query("SELECT COUNT(*) FROM recipes")
     long count();

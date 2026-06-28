@@ -51,6 +51,11 @@
     <string name="recipe_edit_desc">修改</string>
     <string name="label_ingredient">食材</string>
     <string name="label_steps">步骤</string>
+    <string name="label_rating">评分</string>
+    <string name="recipe_rating_desc">评 %1$d 分</string>
+    <string name="category_rating_collapsed">评分 ▸</string>
+    <string name="category_rating_expanded">评分 ▾</string>
+    <string name="rating_score_format">%1$d 分</string>
     <string name="save_image_title">保存图片</string>
     <string name="save_image_message">确定将此图片保存到相册吗？</string>
     <string name="save_image_success_toast">图片已保存到相册</string>

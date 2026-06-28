@@ -84,6 +84,7 @@ public class App extends Application {
                                 "[]",
                                 "",
                                 defaultCategoryId,
+                                0,
                                 0
                         ),
                         new RecipeEntity(
@@ -96,6 +97,7 @@ public class App extends Application {
                                 "[]",
                                 "",
                                 defaultCategoryId,
+                                0,
                                 0
                         ),
                         new RecipeEntity(
@@ -108,6 +110,7 @@ public class App extends Application {
                                 "[]",
                                 "",
                                 defaultCategoryId,
+                                0,
                                 0
                         )
                 );

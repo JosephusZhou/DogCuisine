@@ -75,11 +75,20 @@ import java.io.File
 import java.lang.reflect.Type
 import java.util.concurrent.ExecutorService
 
+private const val FAVORITES_CATEGORY_ID = -1L
+// 评分筛选伪分类：分值 s 对应 id = RATING_FILTER_BASE - s，即 -101..-105
+private const val RATING_FILTER_BASE = -100L
+
+private fun isRatingFilter(id: Long?): Boolean = id != null && id <= -101L && id >= -105L
+
+private fun ratingFilterId(score: Int): Long = RATING_FILTER_BASE - score
+
+private fun ratingFromFilterId(id: Long): Int = (RATING_FILTER_BASE - id).toInt()
+
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val SPLASH_DURATION_MS = 2000L
-        private const val FAVORITES_CATEGORY_ID = -1L
     }
 
     private lateinit var database: AppDatabase
@@ -92,6 +101,7 @@ class MainActivity : AppCompatActivity() {
     private val gson = Gson()
 
     private var selectedCategoryId by mutableStateOf<Long?>(null)
+    private var ratingExpanded by mutableStateOf(false)
     private var totalRecipeCount by mutableStateOf(0L)
     private var overflowExpanded by mutableStateOf(false)
     private var pendingDeleteRecipe by mutableStateOf<RecipeEntity?>(null)
@@ -130,6 +140,9 @@ class MainActivity : AppCompatActivity() {
                     title = getString(R.string.recipes_title_with_count, totalRecipeCount),
                     categories = categories,
                     selectedCategoryId = selectedCategoryId,
+                    ratingExpanded = ratingExpanded,
+                    onRatingExpandedChange = { ratingExpanded = it },
+                    onRatingFilterSelected = { onRatingFilterSelected(it) },
                     recipes = recipes,
                     overflowExpanded = overflowExpanded,
                     onOverflowExpandedChange = { overflowExpanded = it },
@@ -194,6 +207,11 @@ class MainActivity : AppCompatActivity() {
         loadRecipesForSelectedCategory()
     }
 
+    private fun onRatingFilterSelected(score: Int) {
+        selectedCategoryId = ratingFilterId(score)
+        loadRecipesForSelectedCategory()
+    }
+
     private fun updateRecipeCountTitle() {
         ioExecutor.execute {
             val count = database.recipeDao().count()
@@ -210,11 +228,11 @@ class MainActivity : AppCompatActivity() {
 
             if (dbCategories.isNotEmpty()) {
                 val hasSelected =
-                    nextSelected == FAVORITES_CATEGORY_ID || dbCategories.any { it.id == nextSelected }
+                    nextSelected == FAVORITES_CATEGORY_ID || isRatingFilter(nextSelected) || dbCategories.any { it.id == nextSelected }
                 if (!hasSelected) {
                     nextSelected = dbCategories.first().id ?: FAVORITES_CATEGORY_ID
                 }
-            } else {
+            } else if (!isRatingFilter(nextSelected)) {
                 nextSelected = FAVORITES_CATEGORY_ID
             }
 
@@ -235,10 +253,10 @@ class MainActivity : AppCompatActivity() {
     private fun loadRecipesForSelectedCategory() {
         val currentCategory = selectedCategoryId
         ioExecutor.execute {
-            val list = if (currentCategory == FAVORITES_CATEGORY_ID) {
-                database.recipeDao().getFavorites()
-            } else {
-                database.recipeDao().getByCategoryId(currentCategory)
+            val list = when {
+                currentCategory == FAVORITES_CATEGORY_ID -> database.recipeDao().getFavorites()
+                isRatingFilter(currentCategory) -> database.recipeDao().getByRating(ratingFromFilterId(currentCategory!!))
+                else -> database.recipeDao().getByCategoryId(currentCategory)
             } ?: emptyList()
             runOnUiThread {
                 recipes.clear()
@@ -299,6 +317,9 @@ private fun MainScreen(
     title: String,
     categories: List<CategoryEntity>,
     selectedCategoryId: Long?,
+    ratingExpanded: Boolean,
+    onRatingExpandedChange: (Boolean) -> Unit,
+    onRatingFilterSelected: (Int) -> Unit,
     recipes: List<RecipeEntity>,
     overflowExpanded: Boolean,
     onOverflowExpandedChange: (Boolean) -> Unit,
@@ -346,6 +367,9 @@ private fun MainScreen(
                         .width(112.dp),
                     categories = categories,
                     selectedCategoryId = selectedCategoryId,
+                    ratingExpanded = ratingExpanded,
+                    onRatingExpandedChange = onRatingExpandedChange,
+                    onRatingFilterSelected = onRatingFilterSelected,
                     onCategorySelected = onCategorySelected
                 )
                 RecipePane(
@@ -449,8 +473,13 @@ private fun CategoryPane(
     modifier: Modifier = Modifier,
     categories: List<CategoryEntity>,
     selectedCategoryId: Long?,
+    ratingExpanded: Boolean,
+    onRatingExpandedChange: (Boolean) -> Unit,
+    onRatingFilterSelected: (Int) -> Unit,
     onCategorySelected: (CategoryEntity) -> Unit
 ) {
+    val favorites = categories.firstOrNull { it.id == FAVORITES_CATEGORY_ID }
+    val realCategories = categories.filter { it.id != FAVORITES_CATEGORY_ID }
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(18.dp),
@@ -464,30 +493,74 @@ private fun CategoryPane(
                 vertical = 8.dp
             )
         ) {
-            items(items = categories, key = { it.id ?: it.hashCode().toLong() }) { category ->
-                val selected = category.id == selectedCategoryId
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent,
-                    border = androidx.compose.foundation.BorderStroke(
-                        width = 1.dp,
-                        color = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(
-                            alpha = 0.4f
-                        )
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onCategorySelected(category) }
-                ) {
-                    Text(
-                        text = category.name,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface
+            if (favorites != null) {
+                item(key = "favorites") {
+                    CategoryPaneRow(
+                        text = favorites.name,
+                        selected = selectedCategoryId == FAVORITES_CATEGORY_ID,
+                        onClick = { onCategorySelected(favorites) }
                     )
                 }
             }
+            item(key = "rating-parent") {
+                CategoryPaneRow(
+                    text = stringResource(if (ratingExpanded) R.string.category_rating_expanded else R.string.category_rating_collapsed),
+                    selected = false,
+                    onClick = { onRatingExpandedChange(!ratingExpanded) }
+                )
+            }
+            if (ratingExpanded) {
+                items(items = (1..5).toList(), key = { "rating-$it" }) { score ->
+                    CategoryPaneRow(
+                        text = stringResource(R.string.rating_score_format, score),
+                        selected = selectedCategoryId == ratingFilterId(score),
+                        indent = true,
+                        onClick = { onRatingFilterSelected(score) }
+                    )
+                }
+            }
+            items(items = realCategories, key = { it.id ?: it.hashCode().toLong() }) { category ->
+                CategoryPaneRow(
+                    text = category.name,
+                    selected = category.id == selectedCategoryId,
+                    onClick = { onCategorySelected(category) }
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun CategoryPaneRow(
+    text: String,
+    selected: Boolean,
+    indent: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(
+                alpha = 0.4f
+            )
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(
+                start = if (indent) 22.dp else 10.dp,
+                end = 10.dp,
+                top = 10.dp,
+                bottom = 10.dp
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

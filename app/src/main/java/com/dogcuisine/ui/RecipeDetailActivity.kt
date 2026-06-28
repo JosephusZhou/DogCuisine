@@ -15,12 +15,14 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -86,6 +88,7 @@ class RecipeDetailActivity : AppCompatActivity() {
     private var coverImagePath by mutableStateOf<String?>(null)
     private var ingredient by mutableStateOf(StepItem())
     private var isFavorite by mutableStateOf(false)
+    private var rating by mutableStateOf(0)
     private var previewImagePath by mutableStateOf<String?>(null)
     private var saveImagePath by mutableStateOf<String?>(null)
 
@@ -114,6 +117,7 @@ class RecipeDetailActivity : AppCompatActivity() {
                     ingredient = ingredient,
                     steps = steps,
                     isFavorite = isFavorite,
+                    rating = rating,
                     onBack = { finish() },
                     onToggleFavorite = { toggleFavorite() },
                     onEdit = { openEditPage() },
@@ -183,6 +187,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         categoryName = if (category.isNullOrEmpty()) getString(R.string.category_default) else category
         coverImagePath = entity.coverImagePath
         isFavorite = entity.isFavorite == 1
+        rating = entity.rating
         ingredient = parseIngredient(entity.ingredientJson)
         steps.clear()
         steps.addAll(parseSteps(entity.stepsJson))
@@ -282,6 +287,7 @@ private fun RecipeDetailScreen(
     ingredient: StepItem,
     steps: List<StepItem>,
     isFavorite: Boolean,
+    rating: Int,
     onBack: () -> Unit,
     onToggleFavorite: () -> Unit,
     onEdit: () -> Unit,
@@ -367,6 +373,38 @@ private fun RecipeDetailScreen(
                         .fillMaxWidth()
                         .padding(top = 4.dp)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.label_rating),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DogCuisineColors.TextPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (score in 1..5) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (score <= rating) {
+                                    R.drawable.ic_favorite_gold
+                                } else {
+                                    R.drawable.ic_favorite_border_gold
+                                }
+                            ),
+                            contentDescription = stringResource(R.string.recipe_rating_desc, score),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        if (score < 5) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(

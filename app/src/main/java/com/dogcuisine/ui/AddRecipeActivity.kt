@@ -151,6 +151,7 @@ class AddRecipeActivity : AppCompatActivity() {
     private var coverPath by mutableStateOf<String?>(null)
     private var selectedCategoryId by mutableStateOf<Long?>(null)
     private var editingFavorite = 0
+    private var editingRating by mutableStateOf(0)
     private var isSaving by mutableStateOf(false)
 
     private var ingredientText by mutableStateOf("")
@@ -207,6 +208,7 @@ class AddRecipeActivity : AppCompatActivity() {
                     coverPath = coverPath,
                     selectedCategoryId = selectedCategoryId,
                     categoryOptions = categoryOptions,
+                    rating = editingRating,
                     ingredientText = ingredientText,
                     ingredientImages = ingredientImages,
                     steps = steps,
@@ -218,6 +220,7 @@ class AddRecipeActivity : AppCompatActivity() {
                     onPickCover = { pickCover() },
                     onNameChange = { recipeName = it },
                     onCategorySelected = { selectedCategoryId = it },
+                    onRatingChange = { editingRating = it },
                     onIngredientTextClick = {
                         showBottomTextEditor(getString(R.string.edit_ingredient_title), ingredientText) { text ->
                             ingredientText = text
@@ -451,7 +454,8 @@ class AddRecipeActivity : AppCompatActivity() {
                         stepsJson,
                         ingredientJson,
                         categoryId,
-                        editingFavorite
+                        editingFavorite,
+                        editingRating
                     )
                 } else {
                     RecipeEntity(
@@ -464,7 +468,8 @@ class AddRecipeActivity : AppCompatActivity() {
                         stepsJson,
                         ingredientJson,
                         categoryId,
-                        0
+                        0,
+                        editingRating
                     )
                 }
                 App.getInstance().getDatabase().recipeDao().insert(entity)
@@ -507,6 +512,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 existingCreatedAt = entity.createdAt
                 selectedCategoryId = entity.categoryId
                 editingFavorite = entity.isFavorite
+                editingRating = entity.rating
                 recipeName = entity.name.orEmpty()
                 coverPath = entity.coverImagePath
 
@@ -877,6 +883,7 @@ private fun AddRecipeScreen(
     coverPath: String?,
     selectedCategoryId: Long?,
     categoryOptions: List<CategoryEntity>,
+    rating: Int,
     ingredientText: String,
     ingredientImages: List<String>,
     steps: List<StepItem>,
@@ -888,6 +895,7 @@ private fun AddRecipeScreen(
     onPickCover: () -> Unit,
     onNameChange: (String) -> Unit,
     onCategorySelected: (Long?) -> Unit,
+    onRatingChange: (Int) -> Unit,
     onIngredientTextClick: () -> Unit,
     onAddIngredientImages: () -> Unit,
     onIngredientImageClick: (String) -> Unit,
@@ -1002,6 +1010,15 @@ private fun AddRecipeScreen(
                         categoryOptions = categoryOptions,
                         selectedCategoryId = selectedCategoryId,
                         onCategorySelected = onCategorySelected
+                    )
+                }
+                item(key = "rating-title") {
+                    SectionTitle(text = stringResource(R.string.label_rating))
+                }
+                item(key = "rating-selector") {
+                    RatingSelector(
+                        rating = rating,
+                        onRatingChange = onRatingChange
                     )
                 }
                 item(key = "ingredient-title") {
@@ -1159,6 +1176,38 @@ private fun CategorySelector(
                         onCategorySelected(category.id)
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RatingSelector(
+    rating: Int,
+    onRatingChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (score in 1..5) {
+            Icon(
+                painter = painterResource(
+                    id = if (score <= rating) {
+                        R.drawable.ic_favorite_gold
+                    } else {
+                        R.drawable.ic_favorite_border_gold
+                    }
+                ),
+                contentDescription = stringResource(R.string.recipe_rating_desc, score),
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clickable { onRatingChange(if (rating == score) 0 else score) }
+                    .padding(4.dp)
+            )
+            if (score < 5) {
+                Spacer(modifier = Modifier.width(8.dp))
             }
         }
     }
